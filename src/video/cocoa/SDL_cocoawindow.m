@@ -655,15 +655,31 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
 - (void)windowDidMove:(NSNotification *)aNotification
 {
-    int x, y;
+   int x, y;
     SDL_Window *window = _data.window;
     NSWindow *nswindow = _data.nswindow;
+    BOOL fullscreen = window->flags & FULLSCREEN_MASK;
     NSRect rect = [nswindow contentRectForFrameRect:[nswindow frame]];
-    ConvertNSRect(&rect);
+    ConvertNSRect([nswindow screen], fullscreen, &rect);
 
-    if (inFullscreenTransition || b_inModeTransition) {
+    if (inFullscreenTransition) {
         /* We'll take care of this at the end of the transition */
         return;
+    }
+
+    if (s_moveHack) {
+        SDL_bool blockMove = ((SDL_GetTicks() - s_moveHack) < 500);
+
+        s_moveHack = 0;
+
+        if (blockMove) {
+            /* Cocoa is adjusting the window in response to a mode change */
+            rect.origin.x = window->x;
+            rect.origin.y = window->y;
+            ConvertNSRect([nswindow screen], fullscreen, &rect);
+            [nswindow setFrameOrigin:rect.origin];
+            return;
+        }
     }
 
     x = (int)rect.origin.x;
@@ -671,9 +687,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     ScheduleContextUpdates(_data);
 
-    /* Get the parent-relative coordinates for child windows. */
-    SDL_GlobalToRelativeForWindow(window, x, y, &x, &y);
-    SDL_SendWindowEvent(window, SDL_EVENT_WINDOW_MOVED, x, y);
+    SDL_SendWindowEvent(window, SDL_WINDOWEVENT_MOVED, x, y);
 }
 
 - (void)windowDidExpose:(NSNotification *)aNotification

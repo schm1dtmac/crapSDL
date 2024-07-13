@@ -655,7 +655,25 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
 - (void)windowDidMove:(NSNotification *)aNotification
 {
-    return;
+    int x, y;
+    SDL_Window *window = _data.window;
+    NSWindow *nswindow = _data.nswindow;
+    NSRect rect = [nswindow contentRectForFrameRect:[nswindow frame]];
+    ConvertNSRect(&rect);
+
+    if (inFullscreenTransition || b_inModeTransition) {
+        /* We'll take care of this at the end of the transition */
+        return;
+    }
+
+    x = (int)rect.origin.x;
+    y = (int)rect.origin.y;
+
+    ScheduleContextUpdates(_data);
+
+    /* Get the parent-relative coordinates for child windows. */
+    SDL_GlobalToRelativeForWindow(window, x, y, &x, &y);
+    SDL_SendWindowEvent(window, SDL_EVENT_WINDOW_MOVED, x, y);
 }
 
 - (void)windowDidExpose:(NSNotification *)aNotification

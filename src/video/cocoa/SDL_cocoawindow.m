@@ -799,8 +799,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     if ([oldscale doubleValue] != [_data.nswindow backingScaleFactor]) {
         /* Force a resize event when the backing scale factor changes. */
-        _data.window->w = 0;
-        _data.window->h = 0;
         [self windowDidResize:aNotification];
     }
 }

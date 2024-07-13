@@ -30,8 +30,6 @@
 #include "SDL_endian.h"
 #include "SDL_cocoavideo.h"
 #include "SDL_cocoashape.h"
-#include "SDL_cocoavulkan.h"
-#include "SDL_cocoametalview.h"
 #include "SDL_cocoamessagebox.h"
 
 @implementation SDL_VideoData
@@ -134,21 +132,6 @@ static SDL_VideoDevice *Cocoa_CreateDevice(void)
     device->GL_GetSwapInterval = Cocoa_GL_GetSwapInterval;
     device->GL_SwapWindow = Cocoa_GL_SwapWindow;
     device->GL_DeleteContext = Cocoa_GL_DeleteContext;
-#endif
-
-#ifdef SDL_VIDEO_VULKAN
-    device->Vulkan_LoadLibrary = Cocoa_Vulkan_LoadLibrary;
-    device->Vulkan_UnloadLibrary = Cocoa_Vulkan_UnloadLibrary;
-    device->Vulkan_GetInstanceExtensions = Cocoa_Vulkan_GetInstanceExtensions;
-    device->Vulkan_CreateSurface = Cocoa_Vulkan_CreateSurface;
-    device->Vulkan_GetDrawableSize = Cocoa_Vulkan_GetDrawableSize;
-#endif
-
-#ifdef SDL_VIDEO_METAL
-    device->Metal_CreateView = Cocoa_Metal_CreateView;
-    device->Metal_DestroyView = Cocoa_Metal_DestroyView;
-    device->Metal_GetLayer = Cocoa_Metal_GetLayer;
-    device->Metal_GetDrawableSize = Cocoa_Metal_GetDrawableSize;
 #endif
 
     device->SetClipboardText = Cocoa_SetClipboardText;

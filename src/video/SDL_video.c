@@ -456,46 +456,12 @@ int SDL_VideoInit(const char *driver_name)
         goto pre_driver_error;
     }
     init_events = SDL_TRUE;
-    if (SDL_KeyboardInit() < 0) {
-        goto pre_driver_error;
-    }
-    init_keyboard = SDL_TRUE;
-    if (SDL_MousePreInit() < 0) {
-        goto pre_driver_error;
-    }
-    init_mouse = SDL_TRUE;
-    if (SDL_TouchInit() < 0) {
-        goto pre_driver_error;
-    }
-    init_touch = SDL_TRUE;
 
     /* Select the proper video driver */
     video = NULL;
     if (!driver_name) {
         driver_name = SDL_GetHint(SDL_HINT_VIDEODRIVER);
     }
-#if defined(__LINUX__) && defined(SDL_VIDEO_DRIVER_X11)
-    if (!driver_name) {
-        /* See if it looks like we need X11 */
-        SDL_bool force_x11 = SDL_FALSE;
-        void *global_symbols = dlopen(NULL, RTLD_LOCAL|RTLD_NOW);
-
-        /* Use linked libraries to detect what quirks we are likely to need */
-        if (global_symbols != NULL) {
-            if (dlsym(global_symbols, "glxewInit") != NULL) {  /* GLEW (e.g. Frogatto, SLUDGE) */
-                force_x11 = SDL_TRUE;
-            } else if (dlsym(global_symbols, "cgGLEnableProgramProfiles") != NULL) {  /* NVIDIA Cg (e.g. Awesomenauts, Braid) */
-                force_x11 = SDL_TRUE;
-            } else if (dlsym(global_symbols, "_Z7ssgInitv") != NULL) {  /* ::ssgInit(void) in plib (e.g. crrcsim) */
-                force_x11 = SDL_TRUE;
-            }
-            dlclose(global_symbols);
-        }
-        if (force_x11) {
-            driver_name = "x11";
-        }
-    }
-#endif
     if (driver_name && *driver_name != 0) {
         const char *driver_attempt = driver_name;
         while (driver_attempt && *driver_attempt != 0 && !video) {
@@ -583,22 +549,11 @@ int SDL_VideoInit(const char *driver_name)
     }
 #endif /* !SDL_VIDEO_DRIVER_N3DS && !SDL_VIDEO_DRIVER_PSP */
 
-    SDL_MousePostInit();
-
     /* We're ready to go! */
     return 0;
 
 pre_driver_error:
     SDL_assert(_this == NULL);
-    if (init_touch) {
-        SDL_TouchQuit();
-    }
-    if (init_mouse) {
-        SDL_MouseQuit();
-    }
-    if (init_keyboard) {
-        SDL_KeyboardQuit();
-    }
     if (init_events) {
         SDL_QuitSubSystem(SDL_INIT_EVENTS);
     }

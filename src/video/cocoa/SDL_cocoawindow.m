@@ -1742,8 +1742,8 @@ void Cocoa_SetWindowSize(_THIS, SDL_Window * window)
      */
     rect.origin.x = window->x;
     rect.origin.y = window->y;
-    rect.size.width = window->w / [[nswindow screen] backingScaleFactor];
-    rect.size.height = window->h / [[nswindow screen] backingScaleFactor];
+    rect.size.width = window->w;
+    rect.size.height = window->h;
     ConvertNSRect([nswindow screen], (window->flags & FULLSCREEN_MASK), &rect);
 
     moveHack = s_moveHack;

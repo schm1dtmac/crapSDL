@@ -324,31 +324,6 @@ static NSString *GetApplicationName(void)
     return appName;
 }
 
-static bool LoadMainMenuNibIfAvailable(void)
-{
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1080
-    NSDictionary *infoDict;
-    NSString *mainNibFileName;
-    bool success = false;
-
-    if (floor(NSAppKitVersionNumber) < NSAppKitVersionNumber10_8) {
-        return false;
-    }
-    infoDict = [[NSBundle mainBundle] infoDictionary];
-    if (infoDict) {
-        mainNibFileName = [infoDict valueForKey:@"NSMainNibFile"];
-
-        if (mainNibFileName) {
-            success = [[NSBundle mainBundle] loadNibNamed:mainNibFileName owner:[NSApplication sharedApplication] topLevelObjects:nil];
-        }
-    }
-
-    return success;
-#else
-    return false;
-#endif
-}
-
 static void CreateApplicationMenus(void)
 {
     NSString *appName;

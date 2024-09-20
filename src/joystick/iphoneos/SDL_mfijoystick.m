@@ -108,7 +108,6 @@ static id disconnectObserver = nil;
 #define ENABLE_MFI_RUMBLE
 #define ENABLE_MFI_LIGHT
 #define ENABLE_MFI_SENSORS
-#define ENABLE_MFI_SYSTEM_GESTURE_STATE
 #define ENABLE_PHYSICAL_INPUT_PROFILE
 #endif
 
@@ -1038,18 +1037,6 @@ static int IOS_JoystickOpen(SDL_Joystick *joystick, int device_index)
             }
 #endif /* ENABLE_MFI_SENSORS */
 
-#ifdef ENABLE_MFI_SYSTEM_GESTURE_STATE
-            if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
-                GCController *controller = joystick->hwdata->controller;
-                for (id key in controller.physicalInputProfile.buttons) {
-                    GCControllerButtonInput *button = controller.physicalInputProfile.buttons[key];
-                    if ([button isBoundToSystemGesture]) {
-                        button.preferredSystemGestureState = GCSystemGestureStateDisabled;
-                    }
-                }
-            }
-#endif /* ENABLE_MFI_SYSTEM_GESTURE_STATE */
-
 #endif /* SDL_JOYSTICK_MFI */
         }
     }
@@ -1857,17 +1844,6 @@ static void IOS_JoystickClose(SDL_Joystick *joystick)
             GCController *controller = device->controller;
             controller.controllerPausedHandler = nil;
             controller.playerIndex = -1;
-
-#ifdef ENABLE_MFI_SYSTEM_GESTURE_STATE
-            if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
-                for (id key in controller.physicalInputProfile.buttons) {
-                    GCControllerButtonInput *button = controller.physicalInputProfile.buttons[key];
-                    if ([button isBoundToSystemGesture]) {
-                        button.preferredSystemGestureState = GCSystemGestureStateEnabled;
-                    }
-                }
-            }
-#endif /* ENABLE_MFI_SYSTEM_GESTURE_STATE */
 
 #endif /* SDL_JOYSTICK_MFI */
         }

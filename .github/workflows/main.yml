@@ -15,7 +15,7 @@ jobs:
         
     - name: Build
       run: |
-        cmake --build build/ --parallel 3
+        cmake --build build/ --parallel 4
         
     - name: Upload
       uses: actions/upload-artifact@main

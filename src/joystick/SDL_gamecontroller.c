@@ -1072,9 +1072,6 @@ static ControllerMapping_t *SDL_PrivateGetControllerMappingForNameAndGUID(const 
     }
 #endif /* __LINUX__ */
 
-    if (!mapping) {
-        mapping = s_pDefaultMapping;
-    }
     return mapping;
 }
 
@@ -1185,6 +1182,10 @@ static ControllerMapping_t *SDL_PrivateGetControllerMapping(int device_index)
         if (SDL_PrivateJoystickGetAutoGamepadMapping(device_index, &raw_map)) {
             mapping = SDL_PrivateGenerateAutomaticControllerMapping(name, guid, &raw_map);
         }
+    }
+
+    if (!mapping) {
+        mapping = s_pDefaultMapping;
     }
 
     return mapping;
@@ -1740,7 +1741,7 @@ SDL_bool SDL_IsGameControllerNameAndGUID(const char *name, SDL_JoystickGUID guid
 
     SDL_LockJoysticks();
     {
-        if (SDL_PrivateGetControllerMappingForNameAndGUID(name, guid) != NULL) {
+        if (s_pDefaultMapping || SDL_PrivateGetControllerMappingForNameAndGUID(name, guid) != NULL) {
             retval = SDL_TRUE;
         } else {
             retval = SDL_FALSE;

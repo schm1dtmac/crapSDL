@@ -910,11 +910,6 @@ static const char *IOS_JoystickGetDevicePath(int device_index)
     return NULL;
 }
 
-static int IOS_JoystickGetDeviceSteamVirtualGamepadSlot(int device_index)
-{
-    return -1;
-}
-
 static int IOS_JoystickGetDevicePlayerIndex(int device_index)
 {
 #ifdef SDL_JOYSTICK_MFI
@@ -2236,7 +2231,6 @@ SDL_JoystickDriver SDL_IOS_JoystickDriver = {
     IOS_JoystickDetect,
     IOS_JoystickGetDeviceName,
     IOS_JoystickGetDevicePath,
-    IOS_JoystickGetDeviceSteamVirtualGamepadSlot,
     IOS_JoystickGetDevicePlayerIndex,
     IOS_JoystickSetDevicePlayerIndex,
     IOS_JoystickGetDeviceGUID,

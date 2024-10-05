@@ -27,7 +27,6 @@
 #include "SDL_timer.h"
 #include "SDL_sysjoystick.h"
 #include "SDL_joystick_c.h"
-#include "SDL_steam_virtual_gamepad.h"
 #include "SDL_gamecontrollerdb.h"
 #include "controller_type.h"
 #include "usb_ids.h"
@@ -1826,23 +1825,6 @@ SDL_bool SDL_ShouldIgnoreGameController(const char *name, SDL_JoystickGUID guid)
 
     SDL_GetJoystickGUIDInfo(guid, &vendor, &product, &version, NULL);
 
-    if (SDL_GetHintBoolean("SDL_GAMECONTROLLER_ALLOW_STEAM_VIRTUAL_GAMEPAD", SDL_FALSE)) {
-        /* We shouldn't ignore Steam's virtual gamepad since it's using the hints to filter out the real controllers so it can remap input for the virtual controller */
-        /* https://partner.steamgames.com/doc/features/steam_controller/steam_input_gamepad_emulation_bestpractices */
-        SDL_bool bSteamVirtualGamepad = SDL_FALSE;
-#if defined(__LINUX__)
-        bSteamVirtualGamepad = (vendor == USB_VENDOR_VALVE && product == USB_PRODUCT_STEAM_VIRTUAL_GAMEPAD);
-#elif defined(__MACOSX__)
-        bSteamVirtualGamepad = (vendor == USB_VENDOR_MICROSOFT && product == USB_PRODUCT_XBOX360_WIRED_CONTROLLER && version == 1);
-#elif defined(__WIN32__)
-        /* We can't tell on Windows, but Steam will block others in input hooks */
-        bSteamVirtualGamepad = SDL_TRUE;
-#endif
-        if (bSteamVirtualGamepad) {
-            return SDL_FALSE;
-        }
-    }
-
     if (SDL_allowed_controllers.num_included_entries > 0) {
         if (SDL_VIDPIDInList(vendor, product, &SDL_allowed_controllers)) {
             return SDL_FALSE;
@@ -2360,8 +2342,7 @@ const char *SDL_GameControllerName(SDL_GameController *gamecontroller)
     {
         CHECK_GAMECONTROLLER_MAGIC(gamecontroller, NULL);
 
-        if (SDL_strcmp(gamecontroller->name, "*") == 0 ||
-            gamecontroller->joystick->steam_handle != 0) {
+        if (SDL_strcmp(gamecontroller->name, "*") == 0) {
             retval = SDL_JoystickName(gamecontroller->joystick);
         } else {
             retval = gamecontroller->name;
@@ -2386,17 +2367,13 @@ SDL_GameControllerType SDL_GameControllerGetType(SDL_GameController *gamecontrol
 {
     SDL_GameControllerType type = SDL_CONTROLLER_TYPE_UNKNOWN;
     SDL_Joystick *joystick;
-    const SDL_SteamVirtualGamepadInfo *info;
 
     SDL_LockJoysticks();
     {
         CHECK_GAMECONTROLLER_MAGIC(gamecontroller, SDL_CONTROLLER_TYPE_UNKNOWN);
 
         joystick = gamecontroller->joystick;
-        info = SDL_GetJoystickInstanceVirtualGamepadInfo(joystick->instance_id);
-        if (info) {
-            type = info->type;
-        } else if (gamecontroller->type != SDL_CONTROLLER_TYPE_UNKNOWN) {
+        if (gamecontroller->type != SDL_CONTROLLER_TYPE_UNKNOWN) {
             type = gamecontroller->type;
         } else {
             type = SDL_GetJoystickGameControllerTypeFromGUID(SDL_JoystickGetGUID(joystick), SDL_JoystickName(joystick));
@@ -2478,21 +2455,6 @@ const char * SDL_GameControllerGetSerial(SDL_GameController *gamecontroller)
         return NULL;
     }
     return SDL_JoystickGetSerial(joystick);
-}
-
-Uint64 SDL_GameControllerGetSteamHandle(SDL_GameController *gamecontroller)
-{
-    Uint64 handle = 0;
-
-    SDL_LockJoysticks();
-    {
-        CHECK_GAMECONTROLLER_MAGIC(gamecontroller, 0);
-
-        handle = gamecontroller->joystick->steam_handle;
-    }
-    SDL_UnlockJoysticks();
-
-    return handle;
 }
 
 /*

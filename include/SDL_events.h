@@ -132,7 +132,6 @@ typedef enum SDL_EventType
     SDL_CONTROLLERTOUCHPADUP,          /**< Game controller touchpad finger was lifted */
     SDL_CONTROLLERSENSORUPDATE,        /**< Game controller sensor was updated */
     SDL_CONTROLLERUPDATECOMPLETE_RESERVED_FOR_SDL3,
-    SDL_CONTROLLERSTEAMHANDLEUPDATED,  /**< Game controller Steam handle has changed */
 
     /* Touch events */
     SDL_FINGERDOWN      = 0x700,

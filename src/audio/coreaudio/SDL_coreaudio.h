@@ -25,15 +25,11 @@
 
 #include "../SDL_sysaudio.h"
 
-#if !defined(__IPHONEOS__)
-#define MACOSX_COREAUDIO
-#endif
-
 #ifdef MACOSX_COREAUDIO
 #include <CoreAudio/CoreAudio.h>
 #else
 #import <AVFoundation/AVFoundation.h>
-#import <UIKit/UIApplication.h>
+//#import <UIKit/UIApplication.h>
 #endif
 
 #include <AudioToolbox/AudioToolbox.h>

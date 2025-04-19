@@ -151,6 +151,7 @@ static SDL_bool GetDisplayMode(_THIS, CGDisplayModeRef vidmode, SDL_bool vidmode
     Uint32 format = GetDisplayModePixelFormat(vidmode);
     bool interlaced = (ioflags & kDisplayModeInterlacedFlag) != 0;
     CFMutableArrayRef modes;
+    NSWindow *nswindow = ((__bridge SDL_WindowData *) SDL_GetVideoDevice()->windows->driverdata).nswindow;
 
     if (format == SDL_PIXELFORMAT_UNKNOWN) {
         return SDL_FALSE;
@@ -204,12 +205,10 @@ static SDL_bool GetDisplayMode(_THIS, CGDisplayModeRef vidmode, SDL_bool vidmode
 
             
             /* Ignore this mode if it's a 'notched' resolution, as Spaces
-               won't play nicely with these. The easiest way to confirm this is checking if our height
-               equals another mode's plus some safe area inset.
+               won't play nicely with these. The easiest way to confirm this is checking if our aspect ratio 
+               matches with what NSWindow says we're using.
              */
-            if (width == otherW && height > otherH && pixelW == otherpixelW
-                && pixelH > otherpixelH && usableForGUI == otherGUI
-                && refreshrate == otherrefresh && format == otherformat) {
+            if ((height/width != nswindow.frame.size.height/nswindow.frame.size.width) && (pixelH/pixelW != nswindow.frame.size.height/nswindow.frame.size.width) ) {
                 CFRelease(modes);
                 return SDL_FALSE;
             }

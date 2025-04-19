@@ -202,6 +202,18 @@ static SDL_bool GetDisplayMode(_THIS, CGDisplayModeRef vidmode, SDL_bool vidmode
             otherformat = GetDisplayModePixelFormat(othermode);
             otherGUI = CGDisplayModeIsUsableForDesktopGUI(othermode);
 
+            
+            /* Ignore this mode if it's a 'notched' resolution, as Spaces
+               won't play nicely with these. The easiest way to confirm this is checking if our height
+               equals another mode's plus some safe area inset.
+             */
+            if (width == otherW && height > otherH && pixelW == otherpixelW
+                && pixelH > otherpixelH && usableForGUI == otherGUI
+                && refreshrate == otherrefresh && format == otherformat) {
+                CFRelease(modes);
+                return SDL_FALSE;
+            }
+
             /* Ignore this mode if it's low-dpi (@1x) and we have a high-dpi
              * mode in the list with the same size in points.
              */

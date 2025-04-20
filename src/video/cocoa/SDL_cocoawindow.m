@@ -103,8 +103,6 @@
             return NO;
         } else if (window->flags & (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_FULLSCREEN_DESKTOP)) {
             return NO;
-        } else if ((window->flags & SDL_WINDOW_RESIZABLE) == 0) {
-            return NO;
         }
     }
     return [super validateMenuItem:menuItem];
@@ -733,7 +731,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESIZED, w, h);
 
     /* isZoomed always returns true if the window is not resizable */
-    if ((window->flags & SDL_WINDOW_RESIZABLE) && [nswindow isZoomed]) {
+    if (([nswindow isZoomed]) {
         zoomed = YES;
     } else {
         zoomed = NO;
@@ -952,12 +950,9 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
         [nswindow miniaturize:nil];
     } else {
         /* Adjust the fullscreen toggle button and readd menu now that we're here. */
-        if (window->flags & SDL_WINDOW_RESIZABLE) {
-            /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
-            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
-        } else {
-            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorManaged];
-        }
+        /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
+        [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+        
 
         pendingWindowOperation = PENDING_OPERATION_NONE;
 
@@ -1537,7 +1532,7 @@ static int SetupWindowData(_THIS, SDL_Window * window, NSWindow *nswindow, NSVie
     }
 
     /* isZoomed always returns true if the window is not resizable */
-    if ((window->flags & SDL_WINDOW_RESIZABLE) && [nswindow isZoomed]) {
+    if ([nswindow isZoomed]) {
         window->flags |= SDL_WINDOW_MAXIMIZED;
     } else {
         window->flags &= ~SDL_WINDOW_MAXIMIZED;
@@ -1624,10 +1619,8 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
 
     if (videodata.allow_spaces) {
         /* we put FULLSCREEN_DESKTOP windows in their own Space, without a toggle button or menubar, later */
-        if (window->flags & SDL_WINDOW_RESIZABLE) {
-            /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
-            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
-        }
+        /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
+        [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
     }
 
     /* Create a default view for this window */
@@ -1877,7 +1870,7 @@ void Cocoa_RestoreWindow(_THIS, SDL_Window * window)
 
     if ([nswindow isMiniaturized]) {
         [nswindow deminiaturize:nil];
-    } else if ((window->flags & SDL_WINDOW_RESIZABLE) && [nswindow isZoomed]) {
+    } else if ([nswindow isZoomed]) {
         [nswindow zoom:nil];
     }
 }}

@@ -551,7 +551,48 @@ static BOOL IOS_AddMFIJoystickDevice(SDL_JoystickDeviceItem *device, GCControlle
     } else
 #endif
     if (controller.extendedGamepad) {
-        GCExtendedGamepad *gamepad = controller.extendedGamepad;
+        NSDictionary<NSString *, GCControllerElement *> *elements = controller.extendedGamepad.elements;
+
+        /* Provide both axes and analog buttons as SDL axes */
+        NSArray *axes = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
+                                         filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+            GCControllerElement *element;
+
+            if (ElementAlreadyHandled(device, (NSString *)object, elements)) {
+                return NO;
+            }
+
+            element = elements[object];
+            if (element.analog) {
+                if ([element isKindOfClass:[GCControllerAxisInput class]] ||
+                    [element isKindOfClass:[GCControllerButtonInput class]]) {
+                    return YES;
+                }
+            }
+            return NO;
+        }]];
+        NSArray *buttons = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
+                                            filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+            GCControllerElement *element;
+
+            if (ElementAlreadyHandled(device, (NSString *)object, elements)) {
+                return NO;
+            }
+
+            element = elements[object];
+            if ([element isKindOfClass:[GCControllerButtonInput class]]) {
+                return YES;
+            }
+            return NO;
+        }]];
+        /* Explicitly retain the arrays because SDL_JoystickDeviceItem is a
+         * struct, and ARC doesn't work with structs. */
+        device->naxes = (int)axes.count;
+        device->axes = (__bridge NSArray *)CFBridgingRetain(axes);
+        device->nbuttons = (int)buttons.count;
+        device->buttons = (__bridge NSArray *)CFBridgingRetain(buttons);
+        
+        /* GCExtendedGamepad *gamepad = controller.extendedGamepad;
         int nbuttons = 0;
         BOOL has_direct_menu = FALSE;
 
@@ -601,7 +642,7 @@ static BOOL IOS_AddMFIJoystickDevice(SDL_JoystickDeviceItem *device, GCControlle
 
         device->naxes = 6; /* 2 thumbsticks and 2 triggers */
         device->nhats = 1; /* d-pad */
-        device->nbuttons = nbuttons;
+        device->nbuttons = nbuttons; */
 
     } else if (controller.gamepad) {
         int nbuttons = 0;
@@ -1184,7 +1225,32 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
         } else
 #endif
         if (controller.extendedGamepad) {
-            bool isstack;
+          NSDictionary<NSString *, GCControllerElement *> *elements = controller.extendedGamepad.elements;
+            NSDictionary<NSString *, GCControllerButtonInput *> *buttons = controller.extendedGamepad.buttons;
+            int axis = 0;
+            int button = 0;
+
+            for (id key in device->axes) {
+                Sint16 value;
+                GCControllerElement *element = elements[key];
+                if ([element isKindOfClass:[GCControllerAxisInput class]]) {
+                    value = (Sint16)([(GCControllerAxisInput *)element value] * 32767);
+                } else {
+                    value = (Sint16)([(GCControllerButtonInput *)element value] * 32767);
+                }
+                SDL_PrivateJoystickAxis(joystick, axis++, value);
+            }
+
+            for (id key in device->buttons) {
+                Uint8 value;
+                if (button == device->pause_button_index) {
+                    value = (device->pause_button_pressed > 0);
+                } else {
+                    value = buttons[key].isPressed;
+                }
+                SDL_PrivateJoystickButton(joystick, button++, value);
+            }
+            /*bool isstack;
             GCExtendedGamepad *gamepad = controller.extendedGamepad;
 
             /* Axis order matches the XInput Windows mappings. */
@@ -1244,7 +1310,7 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
                 SDL_PrivateJoystickButton(joystick, i, buttons[i]);
             }
 
-            SDL_small_free(buttons, isstack);
+            SDL_small_free(buttons, isstack);*/
         } else if (controller.gamepad) {
             SDL_bool isstack;
             GCGamepad *gamepad = controller.gamepad;

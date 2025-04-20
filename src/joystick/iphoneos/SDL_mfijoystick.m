@@ -1184,7 +1184,7 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
         } else
 #endif
         if (controller.extendedGamepad) {
-            SDL_bool isstack;
+            bool isstack;
             GCExtendedGamepad *gamepad = controller.extendedGamepad;
 
             /* Axis order matches the XInput Windows mappings. */
@@ -1198,11 +1198,9 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
             };
 
             /* Button order matches the XInput Windows mappings. */
-            Uint8 *buttons = SDL_small_alloc(Uint8, joystick->nbuttons, &isstack);
+            bool *buttons = SDL_small_alloc(bool, joystick->nbuttons, &isstack);
             int button_count = 0;
-
             if (buttons == NULL) {
-                SDL_OutOfMemory();
                 return;
             }
 

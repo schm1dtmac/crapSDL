@@ -103,6 +103,8 @@
             return NO;
         } else if (window->flags & (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_FULLSCREEN_DESKTOP)) {
             return NO;
+        } else if ((window->flags & SDL_WINDOW_RESIZABLE) == 0) {
+            return NO;
         }
     }
     return [super validateMenuItem:menuItem];
@@ -731,7 +733,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESIZED, w, h);
 
     /* isZoomed always returns true if the window is not resizable */
-    if ([nswindow isZoomed]) {
+    if ((window->flags & SDL_WINDOW_RESIZABLE) && [nswindow isZoomed]) {
         zoomed = YES;
     } else {
         zoomed = NO;
@@ -846,8 +848,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 {
     SDL_Window *window = _data.window;
 
-    SetWindowStyle(window, (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable));
-
     isFullscreenSpace = YES;
     inFullscreenTransition = YES;
 }
@@ -859,8 +859,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     if (window->is_destroying) {
         return;
     }
-
-    SetWindowStyle(window, GetWindowStyle(window));
 
     isFullscreenSpace = NO;
     inFullscreenTransition = NO;
@@ -896,16 +894,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     isFullscreenSpace = NO;
     inFullscreenTransition = YES;
-
-    /* As of macOS 10.11, the window seems to need to be resizable when exiting
-       a Space, in order for it to resize back to its windowed-mode size.
-       As of macOS 10.15, the window decorations can go missing sometimes after
-       certain fullscreen-desktop->exlusive-fullscreen->windowed mode flows
-       sometimes. Making sure the style mask always uses the windowed mode style
-       when returning to windowed mode from a space (instead of using a pending
-       fullscreen mode style mask) seems to work around that issue.
-     */
-    SetWindowStyle(window, GetWindowWindowedStyle(window) | NSWindowStyleMaskResizable);
 }
 
 - (void)windowDidFailToExitFullScreen:(NSNotification *)aNotification
@@ -915,8 +903,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     if (window->is_destroying) {
         return;
     }
-
-    SetWindowStyle(window, (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable));
 
     isFullscreenSpace = YES;
     inFullscreenTransition = NO;
@@ -932,14 +918,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     inFullscreenTransition = NO;
 
-    /* As of macOS 10.15, the window decorations can go missing sometimes after
-       certain fullscreen-desktop->exlusive-fullscreen->windowed mode flows
-       sometimes. Making sure the style mask always uses the windowed mode style
-       when returning to windowed mode from a space (instead of using a pending
-       fullscreen mode style mask) seems to work around that issue.
-     */
-    SetWindowStyle(window, GetWindowWindowedStyle(window));
-
     [nswindow setLevel:kCGNormalWindowLevel];
 
     if (pendingWindowOperation == PENDING_OPERATION_ENTER_FULLSCREEN) {
@@ -950,9 +928,12 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
         [nswindow miniaturize:nil];
     } else {
         /* Adjust the fullscreen toggle button and readd menu now that we're here. */
-        /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
-        [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
-        
+        if (window->flags & SDL_WINDOW_RESIZABLE) {
+            /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
+            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+        } else {
+            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorManaged];
+        }
 
         pendingWindowOperation = PENDING_OPERATION_NONE;
 
@@ -1012,11 +993,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
 -(NSApplicationPresentationOptions)window:(NSWindow *)window willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions
 {
-   if ((_data.window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP) {
-        return NSApplicationPresentationFullScreen;
-    } else {
-        return proposedOptions;
-    }
+   return proposedOptions;
 }
 
 /* We'll respond to key events by mostly doing nothing so we don't beep.
@@ -1532,7 +1509,7 @@ static int SetupWindowData(_THIS, SDL_Window * window, NSWindow *nswindow, NSVie
     }
 
     /* isZoomed always returns true if the window is not resizable */
-    if ([nswindow isZoomed]) {
+    if ((window->flags & SDL_WINDOW_RESIZABLE) && [nswindow isZoomed]) {
         window->flags |= SDL_WINDOW_MAXIMIZED;
     } else {
         window->flags &= ~SDL_WINDOW_MAXIMIZED;
@@ -1619,8 +1596,10 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
 
     if (videodata.allow_spaces) {
         /* we put FULLSCREEN_DESKTOP windows in their own Space, without a toggle button or menubar, later */
-        /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
-        [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+        if (window->flags & SDL_WINDOW_RESIZABLE) {
+            /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
+            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+        }
     }
 
     /* Create a default view for this window */
@@ -1870,7 +1849,7 @@ void Cocoa_RestoreWindow(_THIS, SDL_Window * window)
 
     if ([nswindow isMiniaturized]) {
         [nswindow deminiaturize:nil];
-    } else if ([nswindow isZoomed]) {
+    } else if ((window->flags & SDL_WINDOW_RESIZABLE) && [nswindow isZoomed]) {
         [nswindow zoom:nil];
     }
 }}
@@ -1896,9 +1875,7 @@ void Cocoa_SetWindowResizable(_THIS, SDL_Window * window, SDL_bool resizable)
     Cocoa_WindowListener *listener = data.listener;
     NSWindow *nswindow = data.nswindow;
     SDL_VideoData *videodata = data.videodata;
-    if (![listener isInFullscreenSpace]) {
-        SetWindowStyle(window, GetWindowStyle(window));
-    }
+    SetWindowStyle(window, GetWindowStyle(window));
     if (videodata.allow_spaces) {
         if (resizable) {
             /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */

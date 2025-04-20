@@ -892,7 +892,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     isFullscreenSpace = YES;
     inFullscreenTransition = NO;
-    [nswindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject:nswindow waitUntilDone:NO];
 }
 
 - (void)windowDidFailToExitFullScreen:(NSNotification *)aNotification
@@ -915,89 +914,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 {
     SDL_Window *window = _data.window;
     NSWindow *nswindow = _data.nswindow;
-    NSButton *button = nil;
-
-    inFullscreenTransition = NO;
-
-    /* As of macOS 10.15, the window decorations can go missing sometimes after
-       certain fullscreen-desktop->exlusive-fullscreen->windowed mode flows
-       sometimes. Making sure the style mask always uses the windowed mode style
-       when returning to windowed mode from a space (instead of using a pending
-       fullscreen mode style mask) seems to work around that issue.
-     */
-    SetWindowStyle(window, GetWindowWindowedStyle(window));
-
-    [nswindow setLevel:kCGNormalWindowLevel];
-
-    if (pendingWindowOperation == PENDING_OPERATION_ENTER_FULLSCREEN) {
-        pendingWindowOperation = PENDING_OPERATION_NONE;
-        [self setFullscreenSpace:YES];
-    } else if (pendingWindowOperation == PENDING_OPERATION_MINIMIZE) {
-        pendingWindowOperation = PENDING_OPERATION_NONE;
-        [nswindow miniaturize:nil];
-    } else {
-        /* Adjust the fullscreen toggle button and readd menu now that we're here. */
-        if (window->flags & SDL_WINDOW_RESIZABLE) {
-            /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
-            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
-        } else {
-            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorManaged];
-        }
-
-        pendingWindowOperation = PENDING_OPERATION_NONE;
-
-#if 0
-/* This fixed bug 3719, which is that changing window size while fullscreen
-   doesn't take effect when leaving fullscreen, but introduces bug 3809,
-   which is that a maximized window doesn't go back to normal size when
-   restored, so this code is disabled until we can properly handle the
-   beginning and end of maximize and restore.
- */
-        /* Restore windowed size and position in case it changed while fullscreen */
-        {
-            NSRect rect;
-            rect.origin.x = window->windowed.x;
-            rect.origin.y = window->windowed.y;
-            rect.size.width = window->windowed.w;
-            rect.size.height = window->windowed.h;
-            ConvertNSRect([nswindow screen], NO, &rect);
-
-            s_moveHack = 0;
-            [nswindow setContentSize:rect.size];
-            [nswindow setFrameOrigin:rect.origin];
-            s_moveHack = SDL_GetTicks();
-        }
-#endif /* 0 */
-
-        /* Force the size change event in case it was delivered earlier
-           while the window was still animating into place.
-         */
-        window->w = 0;
-        window->h = 0;
-        [self windowDidMove:aNotification];
-        [self windowDidResize:aNotification];
-
-        /* FIXME: Why does the window get hidden? */
-        if (window->flags & SDL_WINDOW_SHOWN) {
-            Cocoa_ShowWindow(SDL_GetVideoDevice(), window);
-        }
-    }
-
-    /* There's some state that isn't quite back to normal when
-        windowDidExitFullScreen triggers. For example, the minimize button on
-        the titlebar doesn't actually enable for another 200 milliseconds or
-        so on this MacBook. Camp here and wait for that to happen before
-        going on, in case we're exiting fullscreen to minimize, which need
-        that window state to be normal before it will work. */
-    button = [nswindow standardWindowButton:NSWindowMiniaturizeButton];
-    if (button) {
-        int iterations = 0;
-        while (![button isEnabled] && (iterations < 100)) {
-            SDL_Delay(10);
-            SDL_PumpEvents();
-            iterations++;
-        }
-    }
+    [nswindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject:nswindow waitUntilDone:YES];
 }
 
 -(NSApplicationPresentationOptions)window:(NSWindow *)window willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions

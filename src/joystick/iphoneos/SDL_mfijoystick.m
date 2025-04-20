@@ -987,10 +987,10 @@ static int IOS_JoystickOpen(SDL_Joystick *joystick, int device_index)
     joystick->nhats = device->nhats;
     joystick->nbuttons = device->nbuttons;
     joystick->nballs = 0;
+    IOS_JoystickSetLED(joystick, 0, 0, 128);
 
     if (device->has_dualshock_touchpad) {
         SDL_PrivateJoystickAddTouchpad(joystick, 2);
-        IOS_JoystickSetLED(joystick, 0, 0, 255);
     }
 
     device->joystick = joystick;

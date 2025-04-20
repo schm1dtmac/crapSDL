@@ -1747,6 +1747,32 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
         return SDL_FALSE;
     }
 
+    NSDictionary<NSString *, GCControllerElement *> *elements = controller.extendedGamepad.elements;
+
+    NSArray *axes = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
+                                     filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+        GCControllerElement *element;
+    
+        element = elements[object];
+        if (element.analog) {
+            if ([element isKindOfClass:[GCControllerAxisInput class]] ||
+                [element isKindOfClass:[GCControllerButtonInput class]]) {
+                return YES;
+            }
+        }
+        return NO;
+    }]];
+    NSArray *buttons = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
+                                        filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
+        GCControllerElement *element;
+    
+        element = elements[object];
+        if ([element isKindOfClass:[GCControllerButtonInput class]]) {
+            return YES;
+        }
+        return NO;
+    }]];
+
     if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
         int axis = 0;
         int button = 0;

@@ -98,7 +98,6 @@
      * window is resizable and not in a SDL fullscreen mode.
      */
     if ([menuItem action] == @selector(toggleFullScreen:)) {
-        [[self standardWindowButton:NSWindowZoomButton] setEnabled:NO];
         return NO;
     }
     return [super validateMenuItem:menuItem];
@@ -526,6 +525,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     /* you need to be FullScreenPrimary, or toggleFullScreen doesn't work. Unset it again in windowDidExitFullScreen. */
     [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
     [nswindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject:nswindow waitUntilDone:NO];
+    [[nswindow standardWindowButton:NSWindowZoomButton] setEnabled:NO];
     return YES;
 }
 

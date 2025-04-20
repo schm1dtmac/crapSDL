@@ -106,7 +106,7 @@ static id disconnectObserver = nil;
 #if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 140000) || (__APPLETV_OS_VERSION_MAX_ALLOWED >= 140000) || (__MAC_OS_VERSION_MAX_ALLOWED > 1500000) || (__MAC_OS_X_VERSION_MAX_ALLOWED > 101600)
 #define ENABLE_MFI_RUMBLE
 #define ENABLE_MFI_LIGHT
-#define ENABLE_PHYSICAL_INPUT_PROFILE
+//#define ENABLE_PHYSICAL_INPUT_PROFILE
 #endif
 
 #ifdef ENABLE_MFI_RUMBLE
@@ -1739,7 +1739,6 @@ static void IOS_JoystickQuit(void)
 
 static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMapping *out)
 {
-#ifdef ENABLE_PHYSICAL_INPUT_PROFILE
     SDL_JoystickDeviceItem *device = GetDeviceForIndex(device_index);
     if (device == NULL) {
         return SDL_FALSE;
@@ -1865,8 +1864,6 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
 
         return SDL_TRUE;
     }
-#endif /* ENABLE_PHYSICAL_INPUT_PROFILE */
-
     return SDL_FALSE;
 }
 

@@ -1747,7 +1747,7 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
         return SDL_FALSE;
     }
 
-    NSDictionary<NSString *, GCControllerElement *> *elements = controller.extendedGamepad.elements;
+    NSDictionary<NSString *, GCControllerElement *> *elements = device->controller.extendedGamepad.elements;
 
     NSArray *axes = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
                                      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {

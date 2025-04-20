@@ -211,15 +211,14 @@ int SDL_HIDAPI_SendRumbleWithCallbackAndUnlock(SDL_HIDAPI_Device *device, const 
     SDL_HIDAPI_RumbleRequest *request;
 
     if (size > sizeof(request->data)) {
-        SDL_HIDAPI_UnlockRumble();
         return SDL_SetError("Couldn't send rumble, size %d is greater than %d", size, (int)sizeof(request->data));
     }
 
     request = (SDL_HIDAPI_RumbleRequest *)SDL_calloc(1, sizeof(*request));
     if (!request) {
-        SDL_HIDAPI_UnlockRumble();
         return SDL_OutOfMemory();
     }
+  
     request->device = device;
     SDL_memcpy(request->data, data, size);
     request->size = size;

@@ -1056,12 +1056,12 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
 
             /* Axis order matches the XInput Windows mappings. */
             Sint16 axes[] = {
-                (Sint16)(gamepad.leftThumbstick.xAxis.value * 32767),
-                (Sint16)(gamepad.leftThumbstick.yAxis.value * -32767),
+                (Sint16)(gamepad.rightThumbstick.yAxis.value * -32767),
+                //(Sint16)(gamepad.leftThumbstick.xAxis.value * 32767)
                 (Sint16)((gamepad.leftTrigger.value * 65535) - 32768),
                 (Sint16)(gamepad.rightThumbstick.xAxis.value * 32767),
-                (Sint16)(gamepad.rightThumbstick.yAxis.value * -32767),
-                (Sint16)((gamepad.rightTrigger.value * 65535) - 32768),
+                //(Sint16)((gamepad.rightTrigger.value * 65535) - 32768),
+                (Sint16)(gamepad.leftThumbstick.yAxis.value * -32767),
             };
 
             
@@ -1739,6 +1739,7 @@ static void IOS_JoystickQuit(void)
 
 static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMapping *out)
 {
+#ifdef ENABLE_PHYSICAL_INPUT_PROFILE
     SDL_JoystickDeviceItem *device = GetDeviceForIndex(device_index);
     if (device == NULL) {
         return SDL_FALSE;
@@ -1746,37 +1747,10 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
     if (device->accelerometer) {
         return SDL_FALSE;
     }
-
-    NSDictionary<NSString *, GCControllerElement *> *elements = device->controller.extendedGamepad.elements;
-
-    NSArray *axes = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
-                                     filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
-        GCControllerElement *element;
-    
-        element = elements[object];
-        if (element.analog) {
-            if ([element isKindOfClass:[GCControllerAxisInput class]] ||
-                [element isKindOfClass:[GCControllerButtonInput class]]) {
-                return YES;
-            }
-        }
-        return NO;
-    }]];
-    NSArray *buttons = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
-                                        filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
-        GCControllerElement *element;
-    
-        element = elements[object];
-        if ([element isKindOfClass:[GCControllerButtonInput class]]) {
-            return YES;
-        }
-        return NO;
-    }]];
-
     if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
         int axis = 0;
         int button = 0;
-        for (id key in axes) {
+        for (id key in device->axes) {
             if ([(NSString *)key isEqualToString:@"Left Thumbstick X Axis"] ||
                 [(NSString *)key isEqualToString:@"Direction Pad X Axis"]) {
                 out->leftx.kind = EMappingKind_Axis;
@@ -1805,7 +1779,7 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
             ++axis;
         }
 
-        for (id key in buttons) {
+        for (id key in device->buttons) {
             SDL_InputMapping *mapping = NULL;
 
             if ([(NSString *)key isEqualToString:GCInputButtonA]) {
@@ -1890,6 +1864,7 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
 
         return SDL_TRUE;
     }
+#endif
     return SDL_FALSE;
 }
 

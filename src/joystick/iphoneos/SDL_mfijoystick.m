@@ -1776,7 +1776,7 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
     if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
         int axis = 0;
         int button = 0;
-        for (id key in device->axes) {
+        for (id key in axes) {
             if ([(NSString *)key isEqualToString:@"Left Thumbstick X Axis"] ||
                 [(NSString *)key isEqualToString:@"Direction Pad X Axis"]) {
                 out->leftx.kind = EMappingKind_Axis;
@@ -1805,7 +1805,7 @@ static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMappi
             ++axis;
         }
 
-        for (id key in device->buttons) {
+        for (id key in buttons) {
             SDL_InputMapping *mapping = NULL;
 
             if ([(NSString *)key isEqualToString:GCInputButtonA]) {

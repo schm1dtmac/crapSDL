@@ -558,10 +558,6 @@ static BOOL IOS_AddMFIJoystickDevice(SDL_JoystickDeviceItem *device, GCControlle
                                          filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
             GCControllerElement *element;
 
-            if (ElementAlreadyHandled(device, (NSString *)object, elements)) {
-                return NO;
-            }
-
             element = elements[object];
             if (element.analog) {
                 if ([element isKindOfClass:[GCControllerAxisInput class]] ||
@@ -574,11 +570,7 @@ static BOOL IOS_AddMFIJoystickDevice(SDL_JoystickDeviceItem *device, GCControlle
         NSArray *buttons = [[[elements allKeys] sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)]
                                             filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object, NSDictionary *bindings) {
             GCControllerElement *element;
-
-            if (ElementAlreadyHandled(device, (NSString *)object, elements)) {
-                return NO;
-            }
-
+            
             element = elements[object];
             if ([element isKindOfClass:[GCControllerButtonInput class]]) {
                 return YES;

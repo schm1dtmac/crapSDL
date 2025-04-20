@@ -731,7 +731,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESIZED, w, h);
 
     /* isZoomed always returns true if the window is not resizable */
-    if (([nswindow isZoomed]) {
+    if ([nswindow isZoomed]) {
         zoomed = YES;
     } else {
         zoomed = NO;

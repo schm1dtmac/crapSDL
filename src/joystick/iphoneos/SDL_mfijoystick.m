@@ -591,59 +591,6 @@ static BOOL IOS_AddMFIJoystickDevice(SDL_JoystickDeviceItem *device, GCControlle
         device->axes = (__bridge NSArray *)CFBridgingRetain(axes);
         device->nbuttons = (int)buttons.count;
         device->buttons = (__bridge NSArray *)CFBridgingRetain(buttons);
-        
-        /* GCExtendedGamepad *gamepad = controller.extendedGamepad;
-        int nbuttons = 0;
-        BOOL has_direct_menu = FALSE;
-
-        /* These buttons are part of the original MFi spec */
-        device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_A);
-        device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_B);
-        device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_X);
-        device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_Y);
-        device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_LEFTSHOULDER);
-        device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_RIGHTSHOULDER);
-        nbuttons += 6;
-
-        /* These buttons are available on some newer controllers */
-        if (@available(macOS 10.14.1, iOS 12.1, tvOS 12.1, *)) {
-            if (gamepad.leftThumbstickButton) {
-                device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_LEFTSTICK);
-                ++nbuttons;
-            }
-            if (gamepad.rightThumbstickButton) {
-                device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_RIGHTSTICK);
-                ++nbuttons;
-            }
-        }
-        if (@available(macOS 10.15, iOS 13.0, tvOS 13.0, *)) {
-            if (gamepad.buttonOptions) {
-                device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_BACK);
-                ++nbuttons;
-            }
-        }
-        device->button_mask |= (1 << SDL_CONTROLLER_BUTTON_START);
-        ++nbuttons;
-
-        if (@available(macOS 10.15, iOS 13.0, tvOS 13.0, *)) {
-            if (gamepad.buttonMenu) {
-                has_direct_menu = TRUE;
-            }
-        }
-#if TARGET_OS_TV
-        /* The single menu button isn't very reliable, at least as of tvOS 16.1 */
-        if ((device->button_mask & (1 << SDL_CONTROLLER_BUTTON_BACK)) == 0) {
-            has_direct_menu = FALSE;
-        }
-#endif
-        if (!has_direct_menu) {
-            device->pause_button_index = (nbuttons - 1);
-        }
-
-        device->naxes = 6; /* 2 thumbsticks and 2 triggers */
-        device->nhats = 1; /* d-pad */
-        device->nbuttons = nbuttons; */
-
     } else if (controller.gamepad) {
         int nbuttons = 0;
 
@@ -1250,67 +1197,6 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
                 }
                 SDL_PrivateJoystickButton(joystick, button++, value);
             }
-            /*bool isstack;
-            GCExtendedGamepad *gamepad = controller.extendedGamepad;
-
-            /* Axis order matches the XInput Windows mappings. */
-            Sint16 axes[] = {
-                (Sint16)(gamepad.leftThumbstick.xAxis.value * 32767),
-                (Sint16)(gamepad.leftThumbstick.yAxis.value * -32767),
-                (Sint16)((gamepad.leftTrigger.value * 65535) - 32768),
-                (Sint16)(gamepad.rightThumbstick.xAxis.value * 32767),
-                (Sint16)(gamepad.rightThumbstick.yAxis.value * -32767),
-                (Sint16)((gamepad.rightTrigger.value * 65535) - 32768),
-            };
-
-            /* Button order matches the XInput Windows mappings. */
-            bool *buttons = SDL_small_alloc(bool, joystick->nbuttons, &isstack);
-            int button_count = 0;
-            
-            /* These buttons are part of the original MFi spec */
-            buttons[button_count++] = gamepad.buttonA.isPressed;
-            buttons[button_count++] = gamepad.buttonB.isPressed;
-            buttons[button_count++] = gamepad.buttonX.isPressed;
-            buttons[button_count++] = gamepad.buttonY.isPressed;
-            buttons[button_count++] = gamepad.leftShoulder.isPressed;
-            buttons[button_count++] = gamepad.rightShoulder.isPressed;
-
-            /* These buttons are available on some newer controllers */
-            if (@available(macOS 10.14.1, iOS 12.1, tvOS 12.1, *)) {
-                if (device->button_mask & (1 << SDL_CONTROLLER_BUTTON_LEFTSTICK)) {
-                    buttons[button_count++] = gamepad.leftThumbstickButton.isPressed;
-                }
-                if (device->button_mask & (1 << SDL_CONTROLLER_BUTTON_RIGHTSTICK)) {
-                    buttons[button_count++] = gamepad.rightThumbstickButton.isPressed;
-                }
-            }
-            if (@available(macOS 10.15, iOS 13.0, tvOS 13.0, *)) {
-                if (device->button_mask & (1 << SDL_CONTROLLER_BUTTON_BACK)) {
-                    buttons[button_count++] = gamepad.buttonOptions.isPressed;
-                }
-            }
-            if (device->button_mask & (1 << SDL_CONTROLLER_BUTTON_START)) {
-                if (device->pause_button_index >= 0) {
-                    /* Guaranteed if buttonMenu is not supported on this OS */
-                    buttons[button_count++] = (device->pause_button_pressed > 0);
-                } else {
-                    if (@available(macOS 10.15, iOS 13.0, tvOS 13.0, *)) {
-                        buttons[button_count++] = gamepad.buttonMenu.isPressed;
-                    }
-                }
-            }
-
-            hatstate = IOS_MFIJoystickHatStateForDPad(gamepad.dpad);
-
-            for (i = 0; i < SDL_arraysize(axes); i++) {
-                SDL_PrivateJoystickAxis(joystick, i, axes[i]);
-            }
-
-            for (i = 0; i < button_count; i++) {
-                SDL_PrivateJoystickButton(joystick, i, buttons[i]);
-            }
-
-            SDL_small_free(buttons, isstack);*/
         } else if (controller.gamepad) {
             SDL_bool isstack;
             GCGamepad *gamepad = controller.gamepad;

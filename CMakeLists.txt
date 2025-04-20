@@ -348,7 +348,7 @@ endif()
 set(LONGESTOPTIONNAME 0)  # set_option and friends will change this.
 
 set(SDL_SUBSYSTEMS
-    Atomic Audio Video Render Events Joystick Haptic Power Threads Timers
+    Atomic Audio Video Render Events Joystick Hidapi Power Threads Timers
     File Loadso CPUinfo Filesystem Sensor Locale Misc)
 foreach(_SUB ${SDL_SUBSYSTEMS})
   string(TOUPPER ${_SUB} _OPT)
@@ -441,6 +441,8 @@ dep_option(SDL_KMSDRM_SHARED       "Dynamically load KMS DRM support" ON "SDL_KM
 set_option(SDL_OFFSCREEN           "Use offscreen video driver" OFF)
 option_string(SDL_BACKGROUNDING_SIGNAL "number to use for magic backgrounding signal or 'OFF'" OFF)
 option_string(SDL_FOREGROUNDING_SIGNAL "number to use for magic foregrounding signal or 'OFF'" OFF)
+set_option(SDL_HIDAPI              "Enable the HIDAPI subsystem" ON)
+dep_option(SDL_HIDAPI_JOYSTICK     "Use HIDAPI for low level joystick drivers" ON SDL_HIDAPI OFF)
 set_option(SDL_LIBUDEV             "Enable libudev support" ON)
 set_option(SDL_ASAN                "Use AddressSanitizer to detect memory errors" OFF)
 option_string(SDL_VENDOR_INFO      "Vendor name and/or version to add to SDL_REVISION" "")
@@ -472,6 +474,7 @@ file(GLOB SOURCE_FILES
   ${SDL2_SOURCE_DIR}/src/events/*.c
   ${SDL2_SOURCE_DIR}/src/file/*.c
   ${SDL2_SOURCE_DIR}/src/joystick/*.c
+  ${SDL2_SOURCE_DIR}/src/hidapi/*.c
   ${SDL2_SOURCE_DIR}/src/libm/*.c
   ${SDL2_SOURCE_DIR}/src/locale/*.c
   ${SDL2_SOURCE_DIR}/src/power/*.c
@@ -1227,6 +1230,9 @@ if(ANDROID)
     list(APPEND SOURCE_FILES ${ANDROID_HAPTIC_SOURCES})
     set(HAVE_SDL_HAPTIC TRUE)
   endif()
+  if(SDL_HIDAPI)
+    CheckHIDAPI()
+  endif()
   if(SDL_JOYSTICK)
     set(SDL_JOYSTICK_ANDROID 1)
     file(GLOB ANDROID_JOYSTICK_SOURCES ${SDL2_SOURCE_DIR}/src/joystick/android/*.c ${SDL2_SOURCE_DIR}/src/joystick/steam/*.c)
@@ -1563,6 +1569,10 @@ elseif(UNIX AND NOT APPLE AND NOT RISCOS AND NOT HAIKU)
     list(APPEND SOURCE_FILES "${SDL2_SOURCE_DIR}/src/core/linux/SDL_sandbox.c")
 
     # src/core/unix/*.c is included in a generic if(UNIX) section, elsewhere.
+  endif()
+
+  if(SDL_HIDAPI)
+    CheckHIDAPI()
   endif()
 
   if(SDL_JOYSTICK)
@@ -1907,6 +1917,10 @@ elseif(WINDOWS)
     endif()
   endif()
 
+  if(SDL_HIDAPI)
+    CheckHIDAPI()
+  endif()
+
   if(SDL_JOYSTICK)
     file(GLOB JOYSTICK_SOURCES ${SDL2_SOURCE_DIR}/src/joystick/windows/*.c)
     list(APPEND SOURCE_FILES ${JOYSTICK_SOURCES})
@@ -1999,6 +2013,10 @@ elseif(APPLE)
     set(SDL_FRAMEWORK_COREAUDIO 1)
     set(SDL_FRAMEWORK_AUDIOTOOLBOX 1)
     set(SDL_FRAMEWORK_AVFOUNDATION 1)
+  endif()
+
+  if(SDL_HIDAPI)
+    CheckHIDAPI()
   endif()
 
   if(SDL_JOYSTICK)

@@ -788,6 +788,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     /* Check to see if someone updated the clipboard */
     Cocoa_CheckClipboardUpdate(_data.videodata);
+    [NSMenu setMenuBarVisible:YES];
     
     {
         const unsigned int newflags = [NSEvent modifierFlags] & NSEventModifierFlagCapsLock;
@@ -879,6 +880,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
         pendingWindowOperation = PENDING_OPERATION_NONE;
         [self setFullscreenSpace:NO];
     } else {
+    	[NSMenu setMenuBarVisible:YES];
         pendingWindowOperation = PENDING_OPERATION_NONE;
         /* Force the size change event in case it was delivered earlier
            while the window was still animating into place.

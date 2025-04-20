@@ -879,10 +879,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
         pendingWindowOperation = PENDING_OPERATION_NONE;
         [self setFullscreenSpace:NO];
     } else {
-        if ((window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP) {
-            [NSMenu setMenuBarVisible:NO];
-        }
-
         pendingWindowOperation = PENDING_OPERATION_NONE;
         /* Force the size change event in case it was delivered earlier
            while the window was still animating into place.
@@ -964,7 +960,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
         } else {
             [nswindow setCollectionBehavior:NSWindowCollectionBehaviorManaged];
         }
-        [NSMenu setMenuBarVisible:YES];
 
         pendingWindowOperation = PENDING_OPERATION_NONE;
 

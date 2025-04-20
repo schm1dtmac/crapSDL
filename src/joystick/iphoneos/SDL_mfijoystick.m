@@ -1739,7 +1739,7 @@ static void IOS_JoystickQuit(void)
 
 static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMapping *out)
 {
-    return SDL_FALSE;
+    return SDL_TRUE;
 }
 
 #if defined(SDL_JOYSTICK_MFI) && defined(__MACOSX__)

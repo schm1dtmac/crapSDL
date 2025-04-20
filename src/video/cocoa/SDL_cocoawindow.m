@@ -98,6 +98,7 @@
      * window is resizable and not in a SDL fullscreen mode.
      */
     if ([menuItem action] == @selector(toggleFullScreen:)) {
+        [[self standardWindowButton:NSWindowZoomButton] setEnabled:NO];
         return NO;
     }
     return [super validateMenuItem:menuItem];

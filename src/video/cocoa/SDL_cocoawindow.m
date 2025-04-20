@@ -885,17 +885,17 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
 - (void)windowWillExitFullScreen:(NSNotification *)aNotification
 {
-    abort(0);
+    _exit(0);
 }
 
 - (void)windowDidFailToExitFullScreen:(NSNotification *)aNotification
 {
-    abort(0);
+    _exit(0);
 }
 
 - (void)windowDidExitFullScreen:(NSNotification *)aNotification
 {
-    abort(0);
+    _exit(0);
 }
 
 -(NSApplicationPresentationOptions)window:(NSWindow *)window willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions

@@ -886,6 +886,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 - (void)windowWillExitFullScreen:(NSNotification *)aNotification
 {
     SDL_Window *window = _data.window;
+    NSWindow *nswindow = _data.nswindow;
     /* Let's tell the window to bugger off and stay full-screen. */
     SetWindowStyle(window, (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable));
 

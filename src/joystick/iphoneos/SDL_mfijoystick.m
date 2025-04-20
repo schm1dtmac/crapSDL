@@ -106,7 +106,7 @@ static id disconnectObserver = nil;
 #if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 140000) || (__APPLETV_OS_VERSION_MAX_ALLOWED >= 140000) || (__MAC_OS_VERSION_MAX_ALLOWED > 1500000) || (__MAC_OS_X_VERSION_MAX_ALLOWED > 101600)
 #define ENABLE_MFI_RUMBLE
 #define ENABLE_MFI_LIGHT
-#define ENABLE_PHYSICAL_INPUT_PROFILE
+//#define ENABLE_PHYSICAL_INPUT_PROFILE
 #endif
 
 #ifdef ENABLE_MFI_RUMBLE
@@ -1200,10 +1200,7 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
             /* Button order matches the XInput Windows mappings. */
             bool *buttons = SDL_small_alloc(bool, joystick->nbuttons, &isstack);
             int button_count = 0;
-            if (buttons == NULL) {
-                return;
-            }
-
+            
             /* These buttons are part of the original MFi spec */
             buttons[button_count++] = gamepad.buttonA.isPressed;
             buttons[button_count++] = gamepad.buttonB.isPressed;

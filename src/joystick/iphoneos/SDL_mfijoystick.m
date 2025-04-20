@@ -1739,7 +1739,135 @@ static void IOS_JoystickQuit(void)
 
 static SDL_bool IOS_JoystickGetGamepadMapping(int device_index, SDL_GamepadMapping *out)
 {
-    return SDL_TRUE;
+#ifdef ENABLE_PHYSICAL_INPUT_PROFILE
+    SDL_JoystickDeviceItem *device = GetDeviceForIndex(device_index);
+    if (device == NULL) {
+        return SDL_FALSE;
+    }
+    if (device->accelerometer) {
+        return SDL_FALSE;
+    }
+
+    if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
+        int axis = 0;
+        int button = 0;
+        for (id key in device->axes) {
+            if ([(NSString *)key isEqualToString:@"Left Thumbstick X Axis"] ||
+                [(NSString *)key isEqualToString:@"Direction Pad X Axis"]) {
+                out->leftx.kind = EMappingKind_Axis;
+                out->leftx.target = axis;
+            } else if ([(NSString *)key isEqualToString:@"Left Thumbstick Y Axis"] ||
+                       [(NSString *)key isEqualToString:@"Direction Pad Y Axis"]) {
+                out->lefty.kind = EMappingKind_Axis;
+                out->lefty.target = axis;
+                out->lefty.axis_reversed = SDL_TRUE;
+            } else if ([(NSString *)key isEqualToString:@"Right Thumbstick X Axis"]) {
+                out->rightx.kind = EMappingKind_Axis;
+                out->rightx.target = axis;
+            } else if ([(NSString *)key isEqualToString:@"Right Thumbstick Y Axis"]) {
+                out->righty.kind = EMappingKind_Axis;
+                out->righty.target = axis;
+                out->righty.axis_reversed = SDL_TRUE;
+            } else if ([(NSString *)key isEqualToString:GCInputLeftTrigger]) {
+                out->lefttrigger.kind = EMappingKind_Axis;
+                out->lefttrigger.target = axis;
+                out->lefttrigger.half_axis_positive = SDL_TRUE;
+            } else if ([(NSString *)key isEqualToString:GCInputRightTrigger]) {
+                out->righttrigger.kind = EMappingKind_Axis;
+                out->righttrigger.target = axis;
+                out->righttrigger.half_axis_positive = SDL_TRUE;
+            }
+            ++axis;
+        }
+
+        for (id key in device->buttons) {
+            SDL_InputMapping *mapping = NULL;
+
+            if ([(NSString *)key isEqualToString:GCInputButtonA]) {
+                if (device->is_siri_remote > 1) {
+                    /* GCInputButtonA is triggered for any D-Pad press, ignore it in favor of "Button Center" */
+                } else {
+                    mapping = &out->a;
+                }
+            } else if ([(NSString *)key isEqualToString:GCInputButtonB]) {
+                if (device->is_switch_joyconL || device->is_switch_joyconR) {
+                    mapping = &out->x;
+                } else {
+                    mapping = &out->b;
+                }
+            } else if ([(NSString *)key isEqualToString:GCInputButtonX]) {
+                if (device->is_switch_joyconL || device->is_switch_joyconR) {
+                    mapping = &out->b;
+                } else {
+                    mapping = &out->x;
+                }
+            } else if ([(NSString *)key isEqualToString:GCInputButtonY]) {
+                mapping = &out->y;
+            } else if ([(NSString *)key isEqualToString:@"Direction Pad Left"]) {
+                mapping = &out->dpleft;
+            } else if ([(NSString *)key isEqualToString:@"Direction Pad Right"]) {
+                mapping = &out->dpright;
+            } else if ([(NSString *)key isEqualToString:@"Direction Pad Up"]) {
+                mapping = &out->dpup;
+            } else if ([(NSString *)key isEqualToString:@"Direction Pad Down"]) {
+                mapping = &out->dpdown;
+            } else if ([(NSString *)key isEqualToString:@"Cardinal Direction Pad Left"]) {
+                mapping = &out->dpleft;
+            } else if ([(NSString *)key isEqualToString:@"Cardinal Direction Pad Right"]) {
+                mapping = &out->dpright;
+            } else if ([(NSString *)key isEqualToString:@"Cardinal Direction Pad Up"]) {
+                mapping = &out->dpup;
+            } else if ([(NSString *)key isEqualToString:@"Cardinal Direction Pad Down"]) {
+                mapping = &out->dpdown;
+            } else if ([(NSString *)key isEqualToString:GCInputLeftShoulder]) {
+                mapping = &out->leftshoulder;
+            } else if ([(NSString *)key isEqualToString:GCInputRightShoulder]) {
+                mapping = &out->rightshoulder;
+            } else if ([(NSString *)key isEqualToString:GCInputLeftThumbstickButton]) {
+                mapping = &out->leftstick;
+            } else if ([(NSString *)key isEqualToString:GCInputRightThumbstickButton]) {
+                mapping = &out->rightstick;
+            } else if ([(NSString *)key isEqualToString:@"Button Home"]) {
+                mapping = &out->guide;
+            } else if ([(NSString *)key isEqualToString:GCInputButtonMenu]) {
+                if (device->is_siri_remote) {
+                    mapping = &out->b;
+                } else {
+                    mapping = &out->start;
+                }
+            } else if ([(NSString *)key isEqualToString:GCInputButtonOptions]) {
+                mapping = &out->back;
+            } else if ([(NSString *)key isEqualToString:@"Button Share"]) {
+                mapping = &out->misc1;
+            } else if ([(NSString *)key isEqualToString:GCInputXboxPaddleOne]) {
+                mapping = &out->paddle1;
+            } else if ([(NSString *)key isEqualToString:GCInputXboxPaddleTwo]) {
+                mapping = &out->paddle3;
+            } else if ([(NSString *)key isEqualToString:GCInputXboxPaddleThree]) {
+                mapping = &out->paddle2;
+            } else if ([(NSString *)key isEqualToString:GCInputXboxPaddleFour]) {
+                mapping = &out->paddle4;
+            } else if ([(NSString *)key isEqualToString:GCInputLeftTrigger]) {
+                mapping = &out->lefttrigger;
+            } else if ([(NSString *)key isEqualToString:GCInputRightTrigger]) {
+                mapping = &out->righttrigger;
+            } else if ([(NSString *)key isEqualToString:GCInputDualShockTouchpadButton]) {
+                mapping = &out->touchpad;
+            } else if ([(NSString *)key isEqualToString:@"Button Center"]) {
+                mapping = &out->a;
+            }
+            if (mapping && mapping->kind == EMappingKind_None) {
+                mapping->kind = EMappingKind_Button;
+                mapping->target = button;
+            }
+            ++button;
+        }
+
+        return SDL_TRUE;
+    }
+#endif /* ENABLE_PHYSICAL_INPUT_PROFILE */
+
+    return SDL_FALSE;
 }
 
 #if defined(SDL_JOYSTICK_MFI) && defined(__MACOSX__)

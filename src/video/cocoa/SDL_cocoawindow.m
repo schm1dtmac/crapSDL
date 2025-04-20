@@ -524,7 +524,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     /* you need to be FullScreenPrimary, or toggleFullScreen doesn't work. Unset it again in windowDidExitFullScreen. */
     [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
-    [nswindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject:nswindow waitUntilDone:NO];
+    [nswindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject:nswindow waitUntilDone:YES];
     [nswindow setCollectionBehavior:NSWindowCollectionBehaviorManaged];
     return YES;
 }

@@ -885,36 +885,17 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
 - (void)windowWillExitFullScreen:(NSNotification *)aNotification
 {
-    SDL_Window *window = _data.window;
-    NSWindow *nswindow = _data.nswindow;
-    /* Let's tell the window to bugger off and stay full-screen. */
-    SetWindowStyle(window, (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable));
-
-    isFullscreenSpace = YES;
-    inFullscreenTransition = NO;
+    exit(0);
 }
 
 - (void)windowDidFailToExitFullScreen:(NSNotification *)aNotification
 {
-    SDL_Window *window = _data.window;
-
-    if (window->is_destroying) {
-        return;
-    }
-
-    SetWindowStyle(window, (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable));
-
-    isFullscreenSpace = YES;
-    inFullscreenTransition = NO;
-
-    [self windowDidEnterFullScreen:nil];
+    exit(0);
 }
 
 - (void)windowDidExitFullScreen:(NSNotification *)aNotification
 {
-    SDL_Window *window = _data.window;
-    NSWindow *nswindow = _data.nswindow;
-    [nswindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject:nswindow waitUntilDone:YES];
+    exit(0);
 }
 
 -(NSApplicationPresentationOptions)window:(NSWindow *)window willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions

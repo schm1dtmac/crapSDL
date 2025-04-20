@@ -104,10 +104,8 @@ static id disconnectObserver = nil;
 @end
 
 #if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 140000) || (__APPLETV_OS_VERSION_MAX_ALLOWED >= 140000) || (__MAC_OS_VERSION_MAX_ALLOWED > 1500000) || (__MAC_OS_X_VERSION_MAX_ALLOWED > 101600)
-#define ENABLE_MFI_BATTERY
 #define ENABLE_MFI_RUMBLE
 #define ENABLE_MFI_LIGHT
-#define ENABLE_MFI_SENSORS
 #define ENABLE_PHYSICAL_INPUT_PROFILE
 #endif
 
@@ -1031,6 +1029,16 @@ static int IOS_JoystickOpen(SDL_Joystick *joystick, int device_index)
                 }
             }
 #endif /* ENABLE_MFI_SENSORS */
+
+        if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
+            GCController *controller = joystick->hwdata->controller;
+            for (id key in controller.physicalInputProfile.buttons) {
+                GCControllerButtonInput *button = controller.physicalInputProfile.buttons[key];
+                if ([button isBoundToSystemGesture]) {
+                    button.preferredSystemGestureState = GCSystemGestureStateDisabled;
+                }
+            }
+        }
 
 #endif /* SDL_JOYSTICK_MFI */
         }

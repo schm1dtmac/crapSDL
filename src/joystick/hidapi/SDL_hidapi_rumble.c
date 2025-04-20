@@ -226,19 +226,19 @@ int SDL_HIDAPI_SendRumbleWithCallbackAndUnlock(SDL_HIDAPI_Device *device, const 
     request->callback = callback;
     request->userdata = userdata;
 
-    SDL_AtomicIncRef(&device->rumble_pending);
-
-    if (ctx->requests_head) {
-        ctx->requests_head->prev = request;
-    } else {
-        ctx->requests_tail = request;
+    /* Test: do not use a separate thread for rumble - hopefully fixes input lockup. */
+    SDL_LockMutex(request->device->dev_lock);
+    if (request->device->dev) {
+#ifdef DEBUG_RUMBLE
+        HIDAPI_DumpPacket("Rumble packet: size = %d", request->data, request->size);
+#endif
+        SDL_hid_write(request->device->dev, request->data, request->size);
     }
-    ctx->requests_head = request;
-
-    /* Make sure we unlock before posting the semaphore so the rumble thread can run immediately */
-    SDL_HIDAPI_UnlockRumble();
-
-    SDL_SemPost(ctx->request_sem);
+    SDL_UnlockMutex(request->device->dev_lock);
+    if (request->callback) {
+        request->callback(request->userdata);
+    }
+    SDL_free(request);
 
     return size;
 }

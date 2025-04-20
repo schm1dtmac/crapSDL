@@ -788,7 +788,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     /* Check to see if someone updated the clipboard */
     Cocoa_CheckClipboardUpdate(_data.videodata);
-    [NSMenu setMenuBarVisible:YES];
     
     {
         const unsigned int newflags = [NSEvent modifierFlags] & NSEventModifierFlagCapsLock;
@@ -848,6 +847,8 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 {
     SDL_Window *window = _data.window;
 
+    SetWindowStyle(window, (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable));
+
     isFullscreenSpace = YES;
     inFullscreenTransition = YES;
 }
@@ -859,6 +860,8 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     if (window->is_destroying) {
         return;
     }
+
+    SetWindowStyle(window, GetWindowStyle(window));
 
     isFullscreenSpace = NO;
     inFullscreenTransition = NO;
@@ -876,7 +879,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
         pendingWindowOperation = PENDING_OPERATION_NONE;
         [self setFullscreenSpace:NO];
     } else {
-    	[NSMenu setMenuBarVisible:YES];
         pendingWindowOperation = PENDING_OPERATION_NONE;
         /* Force the size change event in case it was delivered earlier
            while the window was still animating into place.
@@ -894,6 +896,16 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     isFullscreenSpace = NO;
     inFullscreenTransition = YES;
+
+    /* As of macOS 10.11, the window seems to need to be resizable when exiting
+       a Space, in order for it to resize back to its windowed-mode size.
+       As of macOS 10.15, the window decorations can go missing sometimes after
+       certain fullscreen-desktop->exlusive-fullscreen->windowed mode flows
+       sometimes. Making sure the style mask always uses the windowed mode style
+       when returning to windowed mode from a space (instead of using a pending
+       fullscreen mode style mask) seems to work around that issue.
+     */
+    SetWindowStyle(window, GetWindowWindowedStyle(window) | NSWindowStyleMaskResizable);
 }
 
 - (void)windowDidFailToExitFullScreen:(NSNotification *)aNotification
@@ -903,6 +915,8 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     if (window->is_destroying) {
         return;
     }
+
+    SetWindowStyle(window, (NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|NSWindowStyleMaskResizable));
 
     isFullscreenSpace = YES;
     inFullscreenTransition = NO;
@@ -917,6 +931,14 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     NSButton *button = nil;
 
     inFullscreenTransition = NO;
+
+    /* As of macOS 10.15, the window decorations can go missing sometimes after
+       certain fullscreen-desktop->exlusive-fullscreen->windowed mode flows
+       sometimes. Making sure the style mask always uses the windowed mode style
+       when returning to windowed mode from a space (instead of using a pending
+       fullscreen mode style mask) seems to work around that issue.
+     */
+    SetWindowStyle(window, GetWindowWindowedStyle(window));
 
     [nswindow setLevel:kCGNormalWindowLevel];
 
@@ -1875,7 +1897,9 @@ void Cocoa_SetWindowResizable(_THIS, SDL_Window * window, SDL_bool resizable)
     Cocoa_WindowListener *listener = data.listener;
     NSWindow *nswindow = data.nswindow;
     SDL_VideoData *videodata = data.videodata;
-    SetWindowStyle(window, GetWindowStyle(window));
+    if (![listener isInFullscreenSpace]) {
+        SetWindowStyle(window, GetWindowStyle(window));
+    }
     if (videodata.allow_spaces) {
         if (resizable) {
             /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */

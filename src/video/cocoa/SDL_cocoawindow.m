@@ -940,11 +940,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
      */
     SetWindowStyle(window, GetWindowWindowedStyle(window));
 
-    if (window->flags & SDL_WINDOW_ALWAYS_ON_TOP) {
-        [nswindow setLevel:NSFloatingWindowLevel];
-    } else {
-        [nswindow setLevel:kCGNormalWindowLevel];
-    }
+    [nswindow setLevel:kCGNormalWindowLevel];
 
     if (pendingWindowOperation == PENDING_OPERATION_ENTER_FULLSCREEN) {
         pendingWindowOperation = PENDING_OPERATION_NONE;
@@ -1632,10 +1628,6 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
         }
     }
 
-    if (window->flags & SDL_WINDOW_ALWAYS_ON_TOP) {
-        [nswindow setLevel:NSFloatingWindowLevel];
-    }
-
     /* Create a default view for this window */
     rect = [nswindow contentRectForFrameRect:[nswindow frame]];
     contentView = [[SDLView alloc] initWithFrame:rect];
@@ -1926,11 +1918,7 @@ void Cocoa_SetWindowAlwaysOnTop(_THIS, SDL_Window * window, SDL_bool on_top)
 { @autoreleasepool
     {
         NSWindow *nswindow = ((__bridge SDL_WindowData *) window->driverdata).nswindow;
-        if (on_top) {
-            [nswindow setLevel:NSFloatingWindowLevel];
-        } else {
-            [nswindow setLevel:kCGNormalWindowLevel];
-        }
+        [nswindow setLevel:kCGNormalWindowLevel];
     }}
 
 void Cocoa_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * display, SDL_bool fullscreen)
@@ -2002,15 +1990,7 @@ void Cocoa_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * di
     if (!fullscreen) {
         Cocoa_SetWindowTitle(_this, window);
     }
-
-    if (SDL_ShouldAllowTopmost() && fullscreen) {
-        /* OpenGL is rendering to the window, so make it visible! */
-        [nswindow setLevel:NSMainMenuWindowLevel + 1];
-    } else if (window->flags & SDL_WINDOW_ALWAYS_ON_TOP) {
-        [nswindow setLevel:NSFloatingWindowLevel];
-    } else {
-        [nswindow setLevel:kCGNormalWindowLevel];
-    }
+    [nswindow setLevel:kCGNormalWindowLevel];
 
     if ([nswindow isVisible] || fullscreen) {
         [data.listener pauseVisibleObservation];

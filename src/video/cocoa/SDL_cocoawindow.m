@@ -788,10 +788,7 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
 
     /* Check to see if someone updated the clipboard */
     Cocoa_CheckClipboardUpdate(_data.videodata);
-
-    if ((isFullscreenSpace) && ((window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP)) {
-        [NSMenu setMenuBarVisible:NO];
-    }
+    
     {
         const unsigned int newflags = [NSEvent modifierFlags] & NSEventModifierFlagCapsLock;
         _data.videodata.modifierFlags = (_data.videodata.modifierFlags & ~NSEventModifierFlagCapsLock) | newflags;
@@ -814,10 +811,6 @@ static SDL_bool AdjustCoordinatesForGrab(SDL_Window * window, int x, int y, CGPo
     /* Some other window will get keyboard events, since we're not key. */
     if (SDL_GetKeyboardFocus() == _data.window) {
         SDL_SetKeyboardFocus(NULL);
-    }
-
-    if (isFullscreenSpace) {
-        [NSMenu setMenuBarVisible:YES];
     }
 }
 
@@ -2163,9 +2156,6 @@ void Cocoa_DestroyWindow(_THIS, SDL_Window * window)
 
     if (data) {
         NSArray *contexts;
-        if ([data.listener isInFullscreenSpace]) {
-            [NSMenu setMenuBarVisible:YES];
-        }
         [data.listener close];
         data.listener = nil;
         if (data.created) {

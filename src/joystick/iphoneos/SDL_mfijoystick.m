@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,6 +28,7 @@
 #include "SDL_timer.h"
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
+#include "../hidapi/SDL_hidapijoystick_c.h"
 #include "../usb_ids.h"
 
 #include "SDL_mfijoystick_c.h"
@@ -104,8 +105,11 @@ static id disconnectObserver = nil;
 @end
 
 #if (__IPHONE_OS_VERSION_MAX_ALLOWED >= 140000) || (__APPLETV_OS_VERSION_MAX_ALLOWED >= 140000) || (__MAC_OS_VERSION_MAX_ALLOWED > 1500000) || (__MAC_OS_X_VERSION_MAX_ALLOWED > 101600)
+#define ENABLE_MFI_BATTERY
 #define ENABLE_MFI_RUMBLE
 #define ENABLE_MFI_LIGHT
+#define ENABLE_MFI_SENSORS
+#define ENABLE_MFI_SYSTEM_GESTURE_STATE
 #define ENABLE_PHYSICAL_INPUT_PROFILE
 #endif
 
@@ -401,6 +405,24 @@ static BOOL IOS_AddMFIJoystickDevice(SDL_JoystickDeviceItem *device, GCControlle
     device->is_backbone_one = IsControllerBackboneOne(controller);
     device->is_switch_joyconL = IsControllerSwitchJoyConL(controller);
     device->is_switch_joyconR = IsControllerSwitchJoyConR(controller);
+#ifdef SDL_JOYSTICK_HIDAPI
+    if ((device->is_xbox && (HIDAPI_IsDeviceTypePresent(SDL_CONTROLLER_TYPE_XBOXONE) ||
+                             HIDAPI_IsDeviceTypePresent(SDL_CONTROLLER_TYPE_XBOX360))) ||
+        (device->is_ps4 && HIDAPI_IsDeviceTypePresent(SDL_CONTROLLER_TYPE_PS4)) ||
+        (device->is_ps5 && HIDAPI_IsDeviceTypePresent(SDL_CONTROLLER_TYPE_PS5)) ||
+        (device->is_switch_pro && HIDAPI_IsDeviceTypePresent(SDL_CONTROLLER_TYPE_NINTENDO_SWITCH_PRO)) ||
+        (device->is_switch_joycon_pair && HIDAPI_IsDevicePresent(USB_VENDOR_NINTENDO, USB_PRODUCT_NINTENDO_SWITCH_JOYCON_PAIR, 0, "")) ||
+        (device->is_stadia && HIDAPI_IsDevicePresent(USB_VENDOR_GOOGLE, USB_PRODUCT_GOOGLE_STADIA_CONTROLLER, 0, "")) ||
+        (device->is_switch_joyconL && HIDAPI_IsDevicePresent(USB_VENDOR_NINTENDO, USB_PRODUCT_NINTENDO_SWITCH_JOYCON_LEFT, 0, "")) ||
+        (device->is_switch_joyconR && HIDAPI_IsDevicePresent(USB_VENDOR_NINTENDO, USB_PRODUCT_NINTENDO_SWITCH_JOYCON_RIGHT, 0, ""))) {
+        /* The HIDAPI driver is taking care of this device */
+        return FALSE;
+    }
+#endif
+    if (device->is_xbox && SDL_strncmp(name, "GamePad-", 8) == 0) {
+        /* This is a Steam Virtual Gamepad, which isn't supported by GCController */
+        return FALSE;
+    }
     CheckControllerSiriRemote(controller, &device->is_siri_remote);
 
     if (device->is_siri_remote && !SDL_GetHintBoolean(SDL_HINT_TV_REMOTE_AS_JOYSTICK, SDL_TRUE)) {
@@ -420,7 +442,7 @@ static BOOL IOS_AddMFIJoystickDevice(SDL_JoystickDeviceItem *device, GCControlle
             device->has_xbox_share_button = TRUE;
         }
     }
-#endif // ENABLE_PHYSICAL_INPUT_PROFILE
+#endif /* ENABLE_PHYSICAL_INPUT_PROFILE */
 
     if (device->is_backbone_one) {
         vendor = USB_VENDOR_BACKBONE;
@@ -908,6 +930,11 @@ static const char *IOS_JoystickGetDevicePath(int device_index)
     return NULL;
 }
 
+static int IOS_JoystickGetDeviceSteamVirtualGamepadSlot(int device_index)
+{
+    return -1;
+}
+
 static int IOS_JoystickGetDevicePlayerIndex(int device_index)
 {
 #ifdef SDL_JOYSTICK_MFI
@@ -947,32 +974,6 @@ static SDL_JoystickID IOS_JoystickGetDeviceInstanceID(int device_index)
     return device ? device->instance_id : -1;
 }
 
-static int IOS_JoystickSetLED(SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue)
-{
-#ifdef ENABLE_MFI_LIGHT
-    @autoreleasepool {
-        SDL_JoystickDeviceItem *device = joystick->hwdata;
-
-        if (device == NULL) {
-            return SDL_SetError("Controller is no longer connected");
-        }
-
-        if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
-            GCController *controller = device->controller;
-            GCDeviceLight *light = controller.light;
-            if (light) {
-                light.color = [[GCColor alloc] initWithRed:(float)red / 255.0f
-                                                     green:(float)green / 255.0f
-                                                      blue:(float)blue / 255.0f];
-                return 0;
-            }
-        }
-    }
-#endif /* ENABLE_MFI_LIGHT */
-
-    return SDL_Unsupported();
-}
-
 static int IOS_JoystickOpen(SDL_Joystick *joystick, int device_index)
 {
     SDL_JoystickDeviceItem *device = GetDeviceForIndex(device_index);
@@ -990,7 +991,6 @@ static int IOS_JoystickOpen(SDL_Joystick *joystick, int device_index)
 
     if (device->has_dualshock_touchpad) {
         SDL_PrivateJoystickAddTouchpad(joystick, 2);
-        IOS_JoystickSetLED(joystick, 0, 0, 128);
     }
 
     device->joystick = joystick;
@@ -1030,15 +1030,17 @@ static int IOS_JoystickOpen(SDL_Joystick *joystick, int device_index)
             }
 #endif /* ENABLE_MFI_SENSORS */
 
-        if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
-            GCController *controller = joystick->hwdata->controller;
-            for (id key in controller.physicalInputProfile.buttons) {
-                GCControllerButtonInput *button = controller.physicalInputProfile.buttons[key];
-                if ([button isBoundToSystemGesture]) {
-                    button.preferredSystemGestureState = GCSystemGestureStateDisabled;
+#ifdef ENABLE_MFI_SYSTEM_GESTURE_STATE
+            if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
+                GCController *controller = joystick->hwdata->controller;
+                for (id key in controller.physicalInputProfile.buttons) {
+                    GCControllerButtonInput *button = controller.physicalInputProfile.buttons[key];
+                    if ([button isBoundToSystemGesture]) {
+                        button.preferredSystemGestureState = GCSystemGestureStateDisabled;
+                    }
                 }
             }
-        }
+#endif /* ENABLE_MFI_SYSTEM_GESTURE_STATE */
 
 #endif /* SDL_JOYSTICK_MFI */
         }
@@ -1281,6 +1283,8 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
         }
 #if TARGET_OS_TV
         else if (controller.microGamepad) {
+            Uint8 buttons[joystick->nbuttons];
+            int button_count = 0;
             GCMicroGamepad *gamepad = controller.microGamepad;
 
             Sint16 axes[] = {
@@ -1292,8 +1296,6 @@ static void IOS_MFIJoystickUpdate(SDL_Joystick *joystick)
                 SDL_PrivateJoystickAxis(joystick, i, axes[i]);
             }
 
-            Uint8 buttons[joystick->nbuttons];
-            int button_count = 0;
             buttons[button_count++] = gamepad.buttonA.isPressed;
             buttons[button_count++] = gamepad.buttonX.isPressed;
             buttons[button_count++] = (device->pause_button_pressed > 0);
@@ -1694,55 +1696,11 @@ static Uint32 IOS_JoystickGetCapabilities(SDL_Joystick *joystick)
     return result;
 }
 
-typedef struct
+static int IOS_JoystickSetLED(SDL_Joystick *joystick, Uint8 red, Uint8 green, Uint8 blue)
 {
-    Uint8 ucEnableBits1;              /* 0 */
-    Uint8 ucEnableBits2;              /* 1 */
-    Uint8 ucRumbleRight;              /* 2 */
-    Uint8 ucRumbleLeft;               /* 3 */
-    Uint8 ucHeadphoneVolume;          /* 4 */
-    Uint8 ucSpeakerVolume;            /* 5 */
-    Uint8 ucMicrophoneVolume;         /* 6 */
-    Uint8 ucAudioEnableBits;          /* 7 */
-    Uint8 ucMicLightMode;             /* 8 */
-    Uint8 ucAudioMuteBits;            /* 9 */
-    Uint8 rgucRightTriggerEffect[11]; /* 10 */
-    Uint8 rgucLeftTriggerEffect[11];  /* 21 */
-    Uint8 rgucUnknown1[6];            /* 32 */
-    Uint8 ucLedFlags;                 /* 38 */
-    Uint8 rgucUnknown2[2];            /* 39 */
-    Uint8 ucLedAnim;                  /* 41 */
-    Uint8 ucLedBrightness;            /* 42 */
-    Uint8 ucPadLights;                /* 43 */
-    Uint8 ucLedRed;                   /* 44 */
-    Uint8 ucLedGreen;                 /* 45 */
-    Uint8 ucLedBlue;                  /* 46 */
-} DS5EffectsState_t;
-
-static int IOS_JoystickSendEffect(SDL_Joystick *joystick, const void *data, int size)
-{
+#ifdef ENABLE_MFI_LIGHT
     @autoreleasepool {
-        Uint8 ldata[78];
-        Uint8 ubHdr;
-        Uint32 unCRC;
-        int report_size, offset;
-        SDL_zeroa(ldata);
-
-        ldata[0] = 0x31;
-        ldata[1] = 0x02; /* Magic value */
-
-        report_size = 78;
-        offset = 2;
-    
-        SDL_memcpy(&ldata[offset], data, SDL_min((sizeof(ldata) - offset), (size_t)size));
-        /* Bluetooth reports need a CRC at the end of the packet (at least on Linux) */
-        ubHdr = 0xA2; /* hidp header is part of the CRC calculation */
-        unCRC = SDL_crc32(0, &ubHdr, 1);
-        unCRC = SDL_crc32(unCRC, ldata, (size_t)(report_size - sizeof(unCRC)));
-        SDL_memcpy(&ldata[report_size - sizeof(unCRC)], &unCRC, sizeof(unCRC));
-        
         SDL_JoystickDeviceItem *device = joystick->hwdata;
-        DS5EffectsState_t *state = (DS5EffectsState_t *)&ldata[offset];
 
         if (device == NULL) {
             return SDL_SetError("Controller is no longer connected");
@@ -1750,32 +1708,23 @@ static int IOS_JoystickSendEffect(SDL_Joystick *joystick, const void *data, int 
 
         if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
             GCController *controller = device->controller;
-            GCExtendedGamepad* gamepad = controller.extendedGamepad;
-            GCDualSenseGamepad* dualSense = (GCDualSenseGamepad*)gamepad;
-            GCDualSenseAdaptiveTrigger *rightadaptiveTrigger = dualSense.rightTrigger;
-            if ( state->rgucRightTriggerEffect[0] == 0x25 ) {
-              [rightadaptiveTrigger setModeWeaponWithStartPosition: 0.22
-                endPosition: 0.36
-                resistiveStrength: ( ( 3 + state->rgucRightTriggerEffect[3] ) / 8.f ) ];
-            } else if ( state->rgucRightTriggerEffect[0] == 0x06 ) {
-              [rightadaptiveTrigger setModeVibrationWithStartPosition: 0.5
-                amplitude: 1.0
-                frequency: state->rgucRightTriggerEffect[1] / 255.f];
-            } else {
-              [rightadaptiveTrigger setModeOff];
-            }
-            
-            GCDualSenseAdaptiveTrigger *leftadaptiveTrigger = dualSense.leftTrigger;
-            if ( state->rgucLeftTriggerEffect[0] == 0x25 ) {
-              [leftadaptiveTrigger setModeWeaponWithStartPosition: 0.22
-                endPosition: 0.36
-                resistiveStrength: ( ( 3 + state->rgucLeftTriggerEffect[3] ) / 8.f ) ];
-            } else {
-              [leftadaptiveTrigger setModeOff];
+            GCDeviceLight *light = controller.light;
+            if (light) {
+                light.color = [[GCColor alloc] initWithRed:(float)red / 255.0f
+                                                     green:(float)green / 255.0f
+                                                      blue:(float)blue / 255.0f];
+                return 0;
             }
         }
-        return 0;
     }
+#endif /* ENABLE_MFI_LIGHT */
+
+    return SDL_Unsupported();
+}
+
+static int IOS_JoystickSendEffect(SDL_Joystick *joystick, const void *data, int size)
+{
+    return SDL_Unsupported();
 }
 
 static int IOS_JoystickSetSensorsEnabled(SDL_Joystick *joystick, SDL_bool enabled)
@@ -1847,6 +1796,17 @@ static void IOS_JoystickClose(SDL_Joystick *joystick)
             GCController *controller = device->controller;
             controller.controllerPausedHandler = nil;
             controller.playerIndex = -1;
+
+#ifdef ENABLE_MFI_SYSTEM_GESTURE_STATE
+            if (@available(macOS 10.16, iOS 14.0, tvOS 14.0, *)) {
+                for (id key in controller.physicalInputProfile.buttons) {
+                    GCControllerButtonInput *button = controller.physicalInputProfile.buttons[key];
+                    if ([button isBoundToSystemGesture]) {
+                        button.preferredSystemGestureState = GCSystemGestureStateEnabled;
+                    }
+                }
+            }
+#endif /* ENABLE_MFI_SYSTEM_GESTURE_STATE */
 
 #endif /* SDL_JOYSTICK_MFI */
         }
@@ -2239,6 +2199,7 @@ SDL_JoystickDriver SDL_IOS_JoystickDriver = {
     IOS_JoystickDetect,
     IOS_JoystickGetDeviceName,
     IOS_JoystickGetDevicePath,
+    IOS_JoystickGetDeviceSteamVirtualGamepadSlot,
     IOS_JoystickGetDevicePlayerIndex,
     IOS_JoystickSetDevicePlayerIndex,
     IOS_JoystickGetDeviceGUID,

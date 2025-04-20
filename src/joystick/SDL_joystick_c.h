@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2025 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -34,6 +34,7 @@ extern "C" {
 #endif
 
 struct _SDL_JoystickDriver;
+struct SDL_SteamVirtualGamepadInfo;
 extern char SDL_joystick_magic;
 
 /* Initialization and shutdown functions */
@@ -122,6 +123,9 @@ extern SDL_bool SDL_IsJoystickNintendoSwitchJoyConRight(Uint16 vendor_id, Uint16
 extern SDL_bool SDL_IsJoystickNintendoSwitchJoyConGrip(Uint16 vendor_id, Uint16 product_id);
 extern SDL_bool SDL_IsJoystickNintendoSwitchJoyConPair(Uint16 vendor_id, Uint16 product_id);
 
+/* Function to return whether a joystick is a Steam Virtual Gamepad */
+extern SDL_bool SDL_IsJoystickSteamVirtualGamepad(Uint16 vendor_id, Uint16 product_id, Uint16 version);
+
 /* Function to return whether a joystick is a Steam Controller */
 extern SDL_bool SDL_IsJoystickSteamController(Uint16 vendor_id, Uint16 product_id);
 
@@ -178,6 +182,9 @@ extern int SDL_PrivateJoystickSensor(SDL_Joystick *joystick,
                                      SDL_SensorType type, Uint64 timestamp_us, const float *data, int num_values);
 extern void SDL_PrivateJoystickBatteryLevel(SDL_Joystick *joystick,
                                             SDL_JoystickPowerLevel ePowerLevel);
+
+/* Function to get the Steam virtual gamepad info for a joystick */
+extern const struct SDL_SteamVirtualGamepadInfo *SDL_GetJoystickInstanceVirtualGamepadInfo(SDL_JoystickID instance_id);
 
 /* Internal sanity checking functions */
 extern SDL_bool SDL_PrivateJoystickValid(SDL_Joystick *joystick);

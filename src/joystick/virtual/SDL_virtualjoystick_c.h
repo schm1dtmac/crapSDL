@@ -20,58 +20,41 @@
 */
 #include "../../SDL_internal.h"
 
-#ifndef SDL_JOYSTICK_IOS_H
-#define SDL_JOYSTICK_IOS_H
+#ifndef SDL_VIRTUALJOYSTICK_C_H
+#define SDL_VIRTUALJOYSTICK_C_H
 
-#include "SDL_stdinc.h"
-#include "../SDL_sysjoystick.h"
+#ifdef SDL_JOYSTICK_VIRTUAL
 
-#import <CoreFoundation/CoreFoundation.h>
-#import <Foundation/Foundation.h>
+#include "SDL_joystick.h"
 
-@class GCController;
-
+/**
+ * Data for a virtual, software-only joystick.
+ */
 typedef struct joystick_hwdata
 {
-    SDL_bool accelerometer;
-
-    GCController __unsafe_unretained *controller;
-    void *rumble;
-    int pause_button_index;
-    Uint32 pause_button_pressed;
-
+    SDL_JoystickType type;
+    SDL_bool attached;
     char *name;
-    SDL_Joystick *joystick;
-    SDL_JoystickID instance_id;
     SDL_JoystickGUID guid;
-
-    int naxes;
-    int nbuttons;
-    int nhats;
-    Uint32 button_mask;
-    SDL_bool is_xbox;
-    SDL_bool is_ps4;
-    SDL_bool is_ps5;
-    SDL_bool is_switch_pro;
-    SDL_bool is_switch_joycon_pair;
-    SDL_bool is_switch_joyconL;
-    SDL_bool is_switch_joyconR;
-    SDL_bool is_stadia;
-    SDL_bool is_backbone_one;
-    int is_siri_remote;
-
-    NSArray __unsafe_unretained *axes;
-    NSArray __unsafe_unretained *buttons;
-
-    SDL_bool has_dualshock_touchpad;
-    SDL_bool has_xbox_paddles;
-    SDL_bool has_xbox_share_button;
+    SDL_VirtualJoystickDesc desc;
+    Sint16 *axes;
+    Uint8 *buttons;
+    Uint8 *hats;
+    SDL_JoystickID instance_id;
+    SDL_Joystick *joystick;
 
     struct joystick_hwdata *next;
 } joystick_hwdata;
 
-typedef joystick_hwdata SDL_JoystickDeviceItem;
+int SDL_JoystickAttachVirtualInner(const SDL_VirtualJoystickDesc *desc);
+int SDL_JoystickDetachVirtualInner(int device_index);
 
-#endif /* SDL_JOYSTICK_IOS_H */
+int SDL_JoystickSetVirtualAxisInner(SDL_Joystick *joystick, int axis, Sint16 value);
+int SDL_JoystickSetVirtualButtonInner(SDL_Joystick *joystick, int button, Uint8 value);
+int SDL_JoystickSetVirtualHatInner(SDL_Joystick *joystick, int hat, Uint8 value);
+
+#endif /* SDL_JOYSTICK_VIRTUAL */
+
+#endif /* SDL_VIRTUALJOYSTICK_C_H */
 
 /* vi: set ts=4 sw=4 expandtab: */

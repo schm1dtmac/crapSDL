@@ -869,7 +869,7 @@ SDL_Joystick *SDL_JoystickOpen(int device_index)
     // If this joystick is known to have all zero centered axes, skip the auto-centering code
     if (SDL_JoystickAxesCenteredAtZero(joystick)) {
         for (int i = 0; i < joystick->naxes; ++i) {
-            joystick->axes[i].has_initial_value = true;
+            joystick->axes[i].has_initial_value = SDL_TRUE;
         }
     }
 
@@ -878,16 +878,16 @@ SDL_Joystick *SDL_JoystickOpen(int device_index)
          SDL_IsJoystickXInput(joystick->guid) ||
          SDL_IsJoystickRAWINPUT(joystick->guid) ||
          SDL_IsJoystickWGI(joystick->guid)) &&
-        joystick->naxes >= SDL_GAMEPAD_AXIS_COUNT) {
+        joystick->naxes >= SDL_CONTROLLER_AXIS_MAX) {
         int left_trigger, right_trigger;
         if (SDL_IsJoystickXInput(joystick->guid)) {
             left_trigger = 2;
             right_trigger = 5;
         } else {
-            left_trigger = SDL_GAMEPAD_AXIS_LEFT_TRIGGER;
-            right_trigger = SDL_GAMEPAD_AXIS_RIGHT_TRIGGER;
+            left_trigger = SDL_CONTROLLER_AXIS_TRIGGERLEFT;
+            right_trigger = SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
         }
-        for (int i = 0; i < SDL_GAMEPAD_AXIS_COUNT; ++i) {
+        for (int i = 0; i < SDL_CONTROLLER_AXIS_MAX; ++i) {
             int initial_value;
             if (i == left_trigger || i == right_trigger) {
                 initial_value = SDL_MIN_SINT16;
@@ -897,7 +897,7 @@ SDL_Joystick *SDL_JoystickOpen(int device_index)
             joystick->axes[i].value = initial_value;
             joystick->axes[i].zero = initial_value;
             joystick->axes[i].initial_value = initial_value;
-            joystick->axes[i].has_initial_value = true;
+            joystick->axes[i].has_initial_value = SDL_TRUE;
         }
     }
 

@@ -1493,7 +1493,7 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
         return SDL_SetError("%s", [[e reason] UTF8String]);
     }
 
-    [nswindow setColorSpace:(NSColorSpace*)CFBridgingRelease(CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020))];
+    [nswindow setColorSpace:[[NSColorSpace alloc] initWithCGColorSpace:CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020)]];
 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 101200 /* Added in the 10.12.0 SDK. */
     /* By default, don't allow users to make our window tabbed in 10.12 or later */

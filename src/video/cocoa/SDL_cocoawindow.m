@@ -1514,7 +1514,8 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
     rect = [nswindow contentRectForFrameRect:[nswindow frame]];
     contentView = [[SDLView alloc] initWithFrame:rect];
     [contentView setSDLWindow:window];
-	[contentView setWantsExtendedDynamicRangeOpenGLSurface:true];
+	[contentView setWantsExtendedDynamicRangeOpenGLSurface:YES];
+	[[contentView layer] setWantsExtendedDynamicRangeContent:YES];
 
     /* We still support OpenGL as long as Apple offers it, deprecated or not, so disable deprecation warnings about it. */
     #ifdef __clang__

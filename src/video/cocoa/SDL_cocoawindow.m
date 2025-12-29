@@ -1493,7 +1493,7 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
         return SDL_SetError("%s", [[e reason] UTF8String]);
     }
 
-    [nswindow setColorSpace:[NSColorSpace sRGBColorSpace]];
+    [nswindow setColorSpace:[NSColorSpace extendedSRGBColorSpace]];
 
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= 101200 /* Added in the 10.12.0 SDK. */
     /* By default, don't allow users to make our window tabbed in 10.12 or later */
@@ -1514,6 +1514,7 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
     rect = [nswindow contentRectForFrameRect:[nswindow frame]];
     contentView = [[SDLView alloc] initWithFrame:rect];
     [contentView setSDLWindow:window];
+	[contentView setWantsExtendedDynamicRangeOpenGLSurface:true];
 
     /* We still support OpenGL as long as Apple offers it, deprecated or not, so disable deprecation warnings about it. */
     #ifdef __clang__

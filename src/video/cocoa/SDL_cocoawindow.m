@@ -1516,7 +1516,6 @@ int Cocoa_CreateWindow(_THIS, SDL_Window * window)
     [contentView setSDLWindow:window];
 	[contentView setWantsExtendedDynamicRangeOpenGLSurface:YES];
 	[[contentView layer] setWantsExtendedDynamicRangeContent:YES];
-	[[contentView layer] setColorspace:CGColorSpaceCreateWithName(kCGColorSpaceITUR_2020)];
 
     /* We still support OpenGL as long as Apple offers it, deprecated or not, so disable deprecation warnings about it. */
     #ifdef __clang__

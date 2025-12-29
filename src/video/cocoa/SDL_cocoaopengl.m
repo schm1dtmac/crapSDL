@@ -284,7 +284,7 @@ SDL_GLContext Cocoa_GL_CreateContext(_THIS, SDL_Window * window)
     attr[i++] = profile;
 
     attr[i++] = NSOpenGLPFAColorSize;
-    attr[i++] = SDL_BYTESPERPIXEL(display->current_mode.format)*8;
+    attr[i++] = 64;
 
     attr[i++] = NSOpenGLPFADepthSize;
     attr[i++] = _this->gl_config.depth_size;
@@ -320,9 +320,7 @@ SDL_GLContext Cocoa_GL_CreateContext(_THIS, SDL_Window * window)
         attr[i++] = _this->gl_config.multisamplesamples;
         attr[i++] = NSOpenGLPFANoRecovery;
     }
-    if (_this->gl_config.floatbuffers) {
-        attr[i++] = NSOpenGLPFAColorFloat;
-    }
+    attr[i++] = NSOpenGLPFAColorFloat;
 
     if (_this->gl_config.accelerated >= 0) {
         if (_this->gl_config.accelerated) {

@@ -69,7 +69,7 @@ struct GL_ShaderContext
 "void main()\n"                                                 \
 "{\n"                                                           \
 "    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\n" \
-"    v_color = gl_Color;\n"                                     \
+"    v_color = 2.0 * gl_Color;\n"                               \
 "}"                                                             \
 
 #define TEXTURE_VERTEX_SHADER                                   \
@@ -79,7 +79,7 @@ struct GL_ShaderContext
 "void main()\n"                                                 \
 "{\n"                                                           \
 "    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\n" \
-"    v_color = gl_Color;\n"                                     \
+"    v_color = 2.0 * gl_Color;\n"                               \
 "    v_texCoord = vec2(gl_MultiTexCoord0);\n"                   \
 "}"                                                             \
 
